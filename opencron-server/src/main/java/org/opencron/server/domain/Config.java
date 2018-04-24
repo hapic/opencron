@@ -46,6 +46,9 @@ public class Config implements Serializable {
     private String smtpHost;
     private Integer smtpPort;
 
+    private Integer maxRunning;
+
+
     public Long getConfigId() {
         return configId;
     }
@@ -108,6 +111,15 @@ public class Config implements Serializable {
 
     public void setSmtpPort(Integer smtpPort) {
         this.smtpPort = smtpPort;
+    }
+
+
+    public Integer getMaxRunning() {
+        return maxRunning;
+    }
+
+    public void setMaxRunning(Integer maxRunning) {
+        this.maxRunning = maxRunning;
     }
 
     @Override

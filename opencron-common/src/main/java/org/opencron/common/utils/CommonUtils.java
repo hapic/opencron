@@ -536,6 +536,23 @@ public abstract class CommonUtils implements Serializable {
     }
 
 
+    /**
+     * 生成一个组ID
+     * 以当期天为准
+     * @return
+     */
+    public static Long groupId(){
+        String s = DateUtils.formatDayDate(new Date());
+        System.out.println(Long.parseLong(s));
+        return System.nanoTime() + Math.abs(new Random().nextInt());
+//        return Long.parseLong(s);
+    }
+
+    public static void main(String[] args) {
+
+    }
+
+
 }
 
 
