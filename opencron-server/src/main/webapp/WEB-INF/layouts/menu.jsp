@@ -117,6 +117,10 @@
 					<i aria-hidden="true" class="fa fa-tasks" aria-hidden="true"></i><span class="menu-item">作业管理</span>
 				</a>
 				<ul class="list-unstyled menu-item">
+					<li <c:if test="${fn:contains(uri,'/jobGroup/view')}">class="active"</c:if>>
+						<a href="${contextPath}/jobGroup/view.htm?csrf=${csrf}" class="<c:if test="${fn:contains(uri,'/jobGroup/view')}">active</c:if>">作业组管理</a>
+					</li>
+
 					<li <c:if test="${fn:contains(uri,'/job/view')}">class="active"</c:if>>
 						<a href="${contextPath}/job/view.htm?csrf=${csrf}" class="<c:if test="${fn:contains(uri,'/job/view')}">active</c:if>">作业列表</a>
 					</li>

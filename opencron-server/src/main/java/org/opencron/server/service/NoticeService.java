@@ -56,14 +56,14 @@ public class NoticeService {
     @Autowired
     private HomeService homeService;
 
-    @Autowired
+//    @Autowired
     private ServletContext servletContext;
 
     private Template template;
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
-    @PostConstruct
+//    @PostConstruct
     public void initConfig() throws Exception {
         Configuration configuration = new Configuration();
         File file = new File(servletContext.getRealPath("/WEB-INF/layouts"));

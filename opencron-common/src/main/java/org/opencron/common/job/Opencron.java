@@ -229,7 +229,8 @@ public class Opencron implements Serializable {
         STOPED(0x3, "stoped", "已停止"),
         RERUNNING(0x4, "rerunning", "正在重跑"),
         RERUNUNDONE(0x5, "rerunundone", "重跑未完成"),
-        RERUNDONE(0x6, "rerundone", "重跑完成");
+        RERUNDONE(0x6, "rerundone", "重跑完成"),
+        PENDING(0x7, "pending", "待执行");
 
         private Integer status;
         private String name;
@@ -335,6 +336,37 @@ public class Opencron implements Serializable {
         }
     }
 
+    public enum DependenceStatus {
+        NORMAL(1,"正常"),DELETGE(2,"删除");
+
+        private Integer value;
+        private String desc;
+
+        DependenceStatus(Integer value, String desc) {
+            this.value = value;
+            this.desc = desc;
+        }
+
+        public Integer getValue() {
+            return value;
+        }
+
+        public void setValue(Integer value) {
+            this.value = value;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public void setDesc(String desc) {
+            this.desc = desc;
+        }
+    }
+
+    public enum DBOperate{
+        UPDATE,INSERT,SELECT;
+    }
     public enum RunModel {
         SEQUENCE(0x0, "串行"),
         SAMETIME(0x1, "并行");

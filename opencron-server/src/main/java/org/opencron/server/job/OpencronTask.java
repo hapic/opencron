@@ -63,17 +63,26 @@ public class OpencronTask implements InitializingBean {
     @Autowired
     private OpencronMonitor opencronMonitor;
 
+    @Autowired
+    private ConcurrencyControl concurrencyControl;
+
     @Override
     public void afterPropertiesSet() throws Exception {
         configService.initDataBase();
+        concurrencyControl.initAtomic(configService);
         //检测所有的agent...
         clearCache();
         //通知所有的agent,启动心跳检测...
         opencronMonitor.start();
         schedulerService.initQuartz(executeService);
         schedulerService.initCrontab();
+
+
     }
 
+    /**
+     * 重新执行任务
+     */
     @Scheduled(cron = "0/5 * * * * ?")
     public void reExecuteJob() {
         logger.info("[opencron] reExecuteIob running...");

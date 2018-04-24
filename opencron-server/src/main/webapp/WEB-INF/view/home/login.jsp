@@ -493,8 +493,8 @@
 
     <div id="box-login" class="box tile animated active" style="margin-top:30px;">
         <h2 class="m-t-0 m-b-15">登录</h2>
-        <input type="text" placeholder="请输入用户名" id="username" class="login-control m-b-10">
-        <input type="password" placeholder="请输入密码" id="password" class="login-control">
+        <input type="text" placeholder="请输入用户名" id="username" value="opencron" class="login-control m-b-10">
+        <input type="password" placeholder="请输入密码" id="password" value="111111" class="login-control">
         <div class="checkbox m-b-20">
             <label style="color: rgb(192,192,192)">
                 <input type="checkbox" id="remember"> 记住密码
