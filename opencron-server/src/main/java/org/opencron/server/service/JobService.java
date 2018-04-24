@@ -22,34 +22,35 @@
 
 package org.opencron.server.service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-
-import static org.opencron.common.job.Opencron.*;
-
+import com.sun.org.apache.regexp.internal.RE;
+import org.opencron.common.exception.CycleDependencyException;
+import org.opencron.common.exception.DBException;
+import org.opencron.common.exception.InvalidException;
+import org.opencron.common.exception.ParameterException;
+import org.opencron.common.graph.KahnTopo;
+import org.opencron.common.graph.Node;
 import org.opencron.common.job.Opencron;
+import org.opencron.common.utils.CommonUtils;
 import org.opencron.server.dao.QueryDao;
-import org.opencron.server.domain.Job;
-import org.opencron.server.domain.User;
-import org.opencron.server.domain.Agent;
+import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronCollector;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.tag.PageBean;
-
-
-import org.opencron.common.utils.CommonUtils;
+import org.opencron.server.until.GraphUntils;
 import org.opencron.server.vo.JobVo;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
+import java.util.*;
 
+import static org.opencron.common.job.Opencron.*;
+import static org.opencron.common.utils.CommonUtils.contains;
 import static org.opencron.common.utils.CommonUtils.notEmpty;
 
 @Service
@@ -71,14 +72,35 @@ public class JobService {
     @Autowired
     private OpencronCollector opencronCollector;
 
+    @Autowired
+    private JobDependenceService jobDependenceService;
+
+    @Autowired
+    private JobActionGroupService jobActionGroupService;
+
+    @Autowired
+    private JobGroupService jobGroupService;
+
+    @Autowired
+    private RecordService recordService;
+
     private Logger logger = LoggerFactory.getLogger(JobService.class);
 
     public Job getJob(Long jobId) {
         return queryDao.get(Job.class, jobId);
     }
 
+    public JobVo getJobVo(Long jobId) {
+        String sql="SELECT * FROM `t_job` a WHERE a.`jobId`=?";
+        List<JobVo> jobVos = queryDao.sqlQuery(JobVo.class, sql, jobId);
+        if(jobVos!=null){
+            return jobVos.get(0);
+        }
+        return null;
+    }
+
     /**
-     * 获取将要执行的任务
+     * 获取将要执行的任务，每次都根节点出发加载
      *
      * @return
      */
@@ -92,7 +114,8 @@ public class JobService {
                 "AND T.deleted=0 " +
                 "AND T.pause=0";
         List<JobVo> jobs = queryDao.sqlQuery(JobVo.class, sql, cronType.getType(), execType.getStatus());
-        queryJobMore(jobs);
+        //查询更多的任务
+//        queryJobMore(jobs);
         return jobs;
     }
 
@@ -104,7 +127,7 @@ public class JobService {
                 "AND cronType=? " +
                 "AND execType = ? " +
                 "AND T.deleted=0 " +
-                "AND T.pause=0" +
+                "AND T.pause=0 " +
                 "AND D.agentId=? ";
 
         List<JobVo> jobs = queryDao.sqlQuery(JobVo.class, sql, cronType.getType(), execType.getStatus(), agent.getAgentId());
@@ -116,8 +139,8 @@ public class JobService {
         if (CommonUtils.notEmpty(jobs)) {
             for (JobVo job : jobs) {
                 job.setAgent(agentService.getAgent(job.getAgentId()));
-                queryChildren(job);
-                queryJobUser(job);
+                queryChildren(job);//查询子任务
+                queryJobUser(job);//查询job的执行者
             }
         }
     }
@@ -147,6 +170,16 @@ public class JobService {
         return OpencronTools.CACHE.get(OpencronTools.CACHED_JOB_ID, List.class);
     }
 
+    public  List<Job> getAll(Long groupId) {
+        String sql="SELECT * FROM T_JOB WHERE deleted=0";
+        if(groupId!=null){
+            sql+=" and groupId="+groupId;
+        }
+        return queryDao.sqlQuery(Job.class, sql);
+
+    }
+
+
     private synchronized void flushJob() {
         OpencronTools.CACHE.put(OpencronTools.CACHED_JOB_ID, queryDao.sqlQuery(Job.class, "SELECT * FROM T_JOB WHERE deleted=0"));
     }
@@ -158,9 +191,12 @@ public class JobService {
                 "ON T.agentId = D.agentId " +
                 "LEFT JOIN T_USER AS U " +
                 "ON T.userId = U.userId " +
-                "WHERE IFNULL(flowNum,0)=0 " +
-                "AND T.deleted=0 ";
+                "WHERE T.deleted=0 ";
+
         if (job != null) {
+            if (notEmpty(job.getGroupId())) {
+                sql += " AND T.groupId=" + job.getGroupId();
+            }
             if (notEmpty(job.getAgentId())) {
                 sql += " AND T.agentId=" + job.getAgentId();
             }
@@ -182,12 +218,12 @@ public class JobService {
             }
         }
         pageBean = queryDao.getPageBySql(pageBean, JobVo.class, sql);
-        List<JobVo> parentJobs = pageBean.getResult();
-
-        for (JobVo parentJob : parentJobs) {
-            queryChildren(parentJob);
-        }
-        pageBean.setResult(parentJobs);
+//        List<JobVo> parentJobs = pageBean.getResult();
+//
+//       /* for (JobVo parentJob : parentJobs) {
+//            queryChildren(parentJob);
+//        }*/
+////        pageBean.setResult(parentJobs);
         return pageBean;
     }
 
@@ -201,7 +237,7 @@ public class JobService {
                     "WHERE T.deleted=0 " +
                     "AND T.flowId = ? " +
                     "AND T.flowNum>0 " +
-                    "ORDER BY T.flowNum ASC";
+                    "ORDER BY T.flowNum ASC";//按
             List<JobVo> childJobs = queryDao.sqlQuery(JobVo.class, sql, job.getFlowId());
             if (CommonUtils.notEmpty(childJobs)) {
                 for (JobVo jobVo : childJobs) {
@@ -222,12 +258,14 @@ public class JobService {
     }
 
     public JobVo getJobVoById(Long id) {
-        String sql = "SELECT T.*,D.name AS agentName,D.port,D.ip,D.password,U.username AS operateUname " +
+        String sql = "SELECT T.*,D.name AS agentName,D.port,D.ip,D.password,U.username AS operateUname ,tjg.`name` groupName" +
                 " FROM T_JOB AS T " +
                 "LEFT JOIN T_AGENT AS D " +
                 "ON T.agentId = D.agentId " +
                 "LEFT JOIN T_USER AS U " +
                 "ON T.userId = U.userId " +
+                "LEFT JOIN t_job_group tjg " +
+                "ON t.`groupId`=tjg.`id` "+
                 "WHERE T.jobId =?";
         JobVo job = queryDao.sqlUniqueQuery(JobVo.class, sql, id);
         if (job == null) {
@@ -244,13 +282,16 @@ public class JobService {
         }
     }
 
-    public List<JobVo> getJobByAgentId(Long agentId) {
+    public List<JobVo> getJobByAgentId(Long agentId,Long groupId) {
         String sql = "SELECT T.*,D.name AS agentName,D.port,D.ip,D.password,U.userName AS operateUname FROM T_JOB AS T " +
                 "LEFT JOIN T_USER AS U " +
                 "ON T.userId = U.userId " +
                 "LEFT JOIN T_AGENT D " +
                 "ON T.agentId = D.agentId " +
                 "WHERE T.agentId =?";
+                if(groupId!=null){
+                    sql+=" and t.groupId="+groupId;
+                }
         return queryDao.sqlQuery(JobVo.class, sql, agentId);
     }
 
@@ -276,7 +317,7 @@ public class JobService {
         }
 
         //流程任务则检查任务流是否在运行中...
-        if (job.getJobType() == JobType.FLOW.getCode()) {
+       /* if (job.getJobType() == JobType.FLOW.getCode()) {
             sql = "SELECT COUNT(1) FROM T_RECORD AS R INNER JOIN (" +
                     " SELECT J.jobId FROM T_JOB AS J INNER JOIN T_JOB AS F" +
                     " ON J.flowId = F.flowId" +
@@ -288,6 +329,11 @@ public class JobService {
             if (count > 0) {
                 return "false";
             }
+        }*/
+
+        int childCount = this.jobDependenceService.childCount(job.getJobId());
+        if(childCount>0){
+            return "child";
         }
 
         return "true";
@@ -306,13 +352,20 @@ public class JobService {
             if (job.getJobType().equals(JobType.FLOW.getCode())) {
                 if (job.getFlowNum() == 0) {
                     //顶层流程任务,则删除一组
-                    sql += " flowId=" + job.getFlowId();
+                    sql += " groupId=" + job.getGroupId();
                 } else {
                     //其中一个子流程任务,则删除单个
                     sql += " jobId=" + jobId;
                 }
             }
             queryDao.createSQLQuery(sql).executeUpdate();
+
+            int parentJobCount=this.jobDependenceService.breakParentShip(jobId);
+            logger.info("delete job:{} child job count:{}",jobId,parentJobCount);
+
+            refreshJobFowNum(job);
+
+
             schedulerService.syncJobTigger(jobId, null);
             flushJob();
         }
@@ -397,6 +450,14 @@ public class JobService {
             return false;
         }
 
+        //如果有待执行的记录也标记为暂停
+       /* List<Record> listRecord=this.recordService.loadPendingRecordByJobId(job.getJobId());
+
+        for(Record record:listRecord){
+            int i = this.recordService.updateRecord(record.getRecordId(), RunStatus.PENDING.getStatus(), RunStatus.STOPED.getStatus());
+            logger.info("stop job:{} record:{} result:{}",job.getJobId(),record.getRecordId(),i);
+        }*/
+
         CronType cronType = CronType.getByType(job.getCronType());
 
         switch (cronType) {
@@ -433,5 +494,189 @@ public class JobService {
                 }
         }
         return true;
+    }
+
+    /**
+     * 保存当前Job，和添加依赖关系
+     * @param jobVo
+     * @param dependentJobs
+     */
+    public Job saveDependentJobs(Job jobVo, List<Job> dependentJobs) {
+
+        //保存当前job
+        Job job = this.merge(jobVo);
+        jobVo.setJobId(job.getJobId());
+        logger.info("job id:{}",job.getJobId());
+
+
+        //保存依赖关系，并修改前置job的类型
+        if(dependentJobs!=null && dependentJobs.size()>0){
+            /**
+             * 保存依赖关系
+             */
+            for(Job dependentJob:dependentJobs){
+                logger.info("dependentJob Id:{}",dependentJob.getJobId());
+                JobDependence dependence= new JobDependence();
+                dependence.setDependenceJobId(dependentJob.getJobId());
+                dependence.setJobId(job.getJobId());
+                dependence.setGroupId(job.getGroupId());
+                dependence.setStatus(DependenceStatus.NORMAL.getValue());
+                dependence.setUpdateTime(new Date());
+                jobDependenceService.merge(dependence);//保存依赖关系
+
+                //修改依赖job的类型
+                /**
+                 * 如果已经是最后子节点 或者 不是流式任务，则修改
+                 */
+                if( dependentJob.getLastChild() ==null
+                        || dependentJob.getLastChild()
+                        || !dependentJob.getJobType().equals(JobType.FLOW.getCode())){
+                    dependentJob.setJobType(JobType.FLOW.getCode());
+                    dependentJob.setLastChild(false);//前置任务不是最后一个子节点
+                }
+                this.merge(dependentJob);
+            }
+        }
+        return job;
+    }
+
+    private int updateJobFlowNum(Long jobId, int level) {
+        String sql="UPDATE `t_job` tj " +
+                "SET tj.`flowNum`=? " +
+                "WHERE tj.`jobId`=? ";
+        return queryDao.createSQLQuery(sql,level,jobId).executeUpdate();
+    }
+
+
+    public int loadJobCountByGroupId(Long groupId) {
+        String sql="SELECT count(1) FROM `t_job` tj  " +
+                "WHERE tj.`deleted`=0 AND tj.`pause`=0 AND tj.`groupId`=?";
+        Long countBySql = this.queryDao.getCountBySql(sql, groupId);
+        return countBySql==null ? 0 : countBySql.intValue();
+    }
+
+    /**
+     * 更新依赖关系
+     * @param job
+     * @param dependentJob
+     */
+    public void updateDependence(Job job, List<Job> dependentJob) {
+        Long jobId = job.getJobId();
+
+        //修改依赖关系
+        if(CommonUtils.notEmpty(dependentJob)){//如果
+            for(Job depJob:dependentJob){
+                Long depJobId = depJob.getJobId();
+                DBOperate dbOperate = jobDependenceService.updateOrInsert(jobId, depJobId,job.getGroupId());
+                logger.info("jobId:{},depJobId:{} operate:{}",jobId,dependentJob,dbOperate);
+            }
+            refreshJobFowNum(job);
+        }
+
+        this.merge(job);
+
+
+
+    }
+
+    /**
+     * 刷新job的flowNum
+     * @param job
+     */
+    public void refreshJobFowNum(Job job){
+        List<JobDependence> jobDependenceList =jobDependenceService.loadDependence(job.getGroupId());
+
+        KahnTopo<Long> graph = GraphUntils.createGraph(jobDependenceList);
+        if(graph.hasCycle()){//如果有环形依赖，则事务回滚
+            throw new CycleDependencyException("更新失败,有任务间循环依赖!");
+        }
+        logger.info("update flowNum by Job:{}",job.getJobId());
+        Iterable<Node<Long>> result = graph.getResult();
+        this.batchUpdateJobFlowNum(result);
+    }
+
+
+
+
+
+
+    /**
+     * 根据组id查询所有可用的job
+     * @param groupId
+     * @return
+     */
+    public List<JobVo> loadJobByGroupId(Long groupId,Long notJobId) {
+
+        String sql="SELECT * FROM t_job tj " +
+                "WHERE tj.`deleted`=0 AND tj.groupId=? "+
+                " and tj.jobId!=?";
+        if(notJobId==null){
+            notJobId=0L;
+        }
+        return this.queryDao.sqlQuery(JobVo.class,sql,groupId,notJobId);
+    }
+
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void initRootPendingJob(JobVo job, Long actionId) {
+
+        //初始化Task记录
+        DBOperate dbOperate = this.jobActionGroupService.updateActionGroup(job, actionId);
+        if(dbOperate==DBOperate.INSERT){//只有成功插入才可以初始化这些pending的Job
+            logger.info("current job:{} actionId:{} will insert into pending record ! ",job.getJobName(),actionId);
+
+            List<JobVo> rootJobList=this.loadRootJobByGroupId(job.getGroupId());
+            for(JobVo rootJob:rootJobList){
+                logger.info("insert job:{},actionId:{} status:pending ",rootJob.getJobName(),actionId);
+
+                this.recordService.insertPendingReocrd(actionId,rootJob);
+            }
+        }else{
+            logger.info("current job:{} actionId:{} insert fail ! ",job.getJobName(),actionId);
+        }
+    }
+
+    /**
+     *  根据组加载起始任务的节点
+     * @param groupId
+     * @return
+     */
+    public List<JobVo> loadRootJobByGroupId(Long groupId) {
+        String sql="SELECT * FROM `t_job` tj " +
+                "WHERE tj.`deleted`=0 AND tj.`groupId`=? and tj.flowNum=0";
+        return this.queryDao.sqlQuery(JobVo.class,sql,groupId);
+    }
+
+
+    /**
+     * 批量更新job的flowNum值
+     * @param result
+     */
+    public void batchUpdateJobFlowNum(Iterable<Node<Long>> result) {
+        //更新flowNum值
+        Iterator<Node<Long>> iterator = result.iterator();
+        while (iterator.hasNext()){
+            Node<Long> next = iterator.next();
+            Long jobId = next.getVal();
+            int level = next.getLevel();
+            int i=this.updateJobFlowNum(jobId,level);
+            logger.info("update job:{},jobFlowNum:{} ,result:{}",jobId,level,i);
+        }
+    }
+
+
+    public List<Job> loadUsedJobByGroupId(Long groupId) {
+        String sql="SELECT * FROM `t_job` tj " +
+                "WHERE tj.`deleted`=0 AND tj.`groupId`=?";
+        return this.queryDao.sqlQuery(Job.class,sql,groupId);
+    }
+
+    public void batchIinitJob(List<Job> jobVos) {
+        for(Job vo:jobVos){
+            Job merge = this.merge(vo);
+            vo.setJobId(merge.getJobId());
+            logger.info("insert into job:{} name:{} success!",vo.getJobId(),vo.getJobName());
+        }
     }
 }

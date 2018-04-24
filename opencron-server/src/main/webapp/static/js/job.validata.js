@@ -103,6 +103,15 @@ function Validata() {
                 opencron.tipOk("#cmd" + elemFix);
             }
         },
+        group: function () {
+            if($("#groupId").val()<1){
+                this.status=false;
+                opencron.tipError("#groupTip" , "请选择一个分组!");
+            }else{
+                this.status=true;
+                opencron.tipOk("#groupTip");
+            }
+        },
 
         runAs: function () {
             var elemFix = arguments[0] || "";
@@ -227,6 +236,7 @@ function Validata() {
             this.jobName();
             this.cronExp();
             this.command();
+            this.group();
             this.successExit();
             this.runAs();
             this.runCount();
@@ -242,6 +252,7 @@ function Validata() {
         tipDefault: function () {
             opencron.tipDefault("#jobName1");
             opencron.tipDefault("#cmd1");
+            opencron.tipDefault("#group1");
             opencron.tipDefault("#runAs1");
             opencron.tipDefault("#successExit1");
             opencron.tipDefault("#timeout1");
@@ -310,6 +321,7 @@ function Validata() {
             self.validata.init();
             self.validata.jobName("1");
             self.validata.command("1");
+            self.validata.group("1");
             self.validata.runAs("1");
             self.validata.successExit("1");
             self.validata.timeout("1");
@@ -405,6 +417,15 @@ function Validata() {
                 $(".cronExpDiv").hide();
                 $("#execTypeTip").html("手动模式: 管理员手动执行");
             }
+        },
+        dependenceJob:function(_toggle){
+            if (_toggle) {
+                opencron.tipDefault("#cronExp");
+                $(".execTypeDiv").hide();
+            }else{
+                $(".execTypeDiv").show();
+            }
+
         },
         redo: function (_toggle) {
             $("#itemRedo").val(_toggle);
@@ -609,7 +630,8 @@ Validata.prototype.ready = function () {
                 if (_this.validata.jobNameRemote ) {
                     var cleanFlag = false;
                     var checkExp = $('input[type="radio"][name="execType"]:checked').val() == 0;
-                    if( checkExp ){
+                    var depJob=$('#dependenceid').val();
+                    if( checkExp && !depJob){
                         if(_this.validata.cronExpRemote){
                             cleanFlag = true;
                         }
@@ -659,6 +681,10 @@ Validata.prototype.ready = function () {
         _this.validata.jobName("1");
     }).focus(function () {
         opencron.tipDefault("#jobName1");
+    });
+
+    $("#groupId").change(function () {
+        _this.validata.group("1");
     });
 
     $("#cmd").blur(function () {

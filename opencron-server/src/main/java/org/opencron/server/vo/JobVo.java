@@ -73,6 +73,8 @@ public class JobVo implements Serializable {
 
     //子任务
     private List<JobVo> children;
+    //依赖的job
+    private List<JobVo> dependenceJob;
 
     //是否为流程任务的最后一个子任务
     private Boolean lastChild;
@@ -92,6 +94,82 @@ public class JobVo implements Serializable {
 
     private Boolean pause;//任务是否暂停(true:已经暂停,false:未暂停)
 
+    private Long groupId;
+
+    private String groupName;
+
+    private Long recordId;
+
+    private Long dependenceJobId;
+
+    private Long success;
+    private Long status;
+
+    private Long actionId;
+
+    public Long getActionId() {
+        return actionId;
+    }
+
+    public void setActionId(Long actionId) {
+        this.actionId = actionId;
+    }
+
+    public Long getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(Long success) {
+        this.success = success;
+    }
+
+    public Long getStatus() {
+        return status;
+    }
+
+    public void setStatus(Long status) {
+        this.status = status;
+    }
+
+    public Long getRecordId() {
+        return recordId;
+    }
+
+    public void setRecordId(Long recordId) {
+        this.recordId = recordId;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
+
+    public List<JobVo> getDependenceJob() {
+        return dependenceJob;
+    }
+
+    public void setDependenceJob(List<JobVo> dependenceJob) {
+        this.dependenceJob = dependenceJob;
+    }
+
+    public Long getDependenceJobId() {
+        return dependenceJobId;
+    }
+
+    public void setDependenceJobId(Long dependenceJobId) {
+        this.dependenceJobId = dependenceJobId;
+    }
 
     public JobVo(){}
 

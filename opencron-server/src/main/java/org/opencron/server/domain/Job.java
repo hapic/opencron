@@ -69,6 +69,7 @@ public class Job implements Serializable {
 
     private String mobiles;
 
+
     @Lob
     @Column(columnDefinition="TEXT")
     private String emailAddress;
@@ -80,6 +81,17 @@ public class Job implements Serializable {
     //运行超时的截止时间
     private Integer timeout;
 
+    //所属组
+    private Long groupId;
+
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
 
     public Long getJobId() {
         return jobId;
@@ -160,6 +172,7 @@ public class Job implements Serializable {
     public void setSuccessExit(String successExit) {
         this.successExit = successExit;
     }
+
 
     public Long getUserId() {
         return userId;
