@@ -42,6 +42,9 @@ public class ConfigService {
     private QueryDao queryDao;
 
     @Autowired
+    private ConcurrencyControl concurrencyControl;
+
+    @Autowired
     private UserService userService;
 
     public Config getSysConfig() {
@@ -50,6 +53,7 @@ public class ConfigService {
 
     
     public void update(Config config) {
+        concurrencyControl.updateConcurrencyNum(config.getMaxRunning());
         queryDao.save(config);
     }
 
@@ -68,6 +72,7 @@ public class ConfigService {
             config.setPassword("your_mail_pwd");
             config.setSendUrl("http://your_url");
             config.setSpaceTime(30);
+            config.setMaxRunning(10);
             session.save(config);
 
             Role role = new Role();
@@ -85,13 +90,13 @@ public class ConfigService {
             session.getTransaction().commit();
 
             User user = new User();
-            user.setUserName("opencron");
-            user.setPassword(DigestUtils.md5Hex("opencron").toUpperCase());
+            user.setUserName("admin");
+            user.setPassword(DigestUtils.md5Hex("111111").toUpperCase());
             user.setRoleId(999L);
-            user.setRealName("opencron");
-            user.setEmail("benjobs@qq.com");
-            user.setQq("benjobs@qq.com");
-            user.setContact("13800138000");
+            user.setRealName("admin");
+            user.setEmail("871881208@qq.com");
+            user.setQq("871881208@qq.com");
+            user.setContact("871881208");
             userService.addUser(user);
 
         }

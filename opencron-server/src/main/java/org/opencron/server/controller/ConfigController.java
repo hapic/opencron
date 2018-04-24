@@ -73,6 +73,9 @@ public class ConfigController extends BaseController {
         cfg.setSmtpHost(config.getSmtpHost());
         cfg.setSpaceTime(config.getSpaceTime());
         cfg.setSmtpPort(config.getSmtpPort());
+        if(config.getMaxRunning()>1){
+            cfg.setMaxRunning(config.getMaxRunning());
+        }
         configService.update(cfg);
         return "redirect:/config/view.htm?csrf=" + OpencronTools.getCSRF(session);
     }
@@ -82,6 +85,12 @@ public class ConfigController extends BaseController {
     public boolean clearRecord(String startTime, String endTime) {
         recordService.deleteRecordBetweenTime(startTime, endTime);
         return true;
+    }
+
+    @RequestMapping(value = "currentRunning.do",method= RequestMethod.POST)
+    @ResponseBody
+    public int currentRunning() {
+        return recordService.runningRecordCount();
     }
 
     @RequestMapping(value = "skin.do",method= RequestMethod.POST)
