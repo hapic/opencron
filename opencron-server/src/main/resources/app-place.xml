@@ -28,4 +28,9 @@
 
     <bean class="org.opencron.server.job.OpencronTask" lazy-init="false"/>
 
+    <bean class="org.opencron.server.job.OpencronWatch" lazy-init="false"/>
+
+    <import resource="app-datasource.xml"/>
+    <!--<import resource="app-websocket.xml"/>-->
+
 </beans>
