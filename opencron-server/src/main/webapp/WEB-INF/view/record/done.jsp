@@ -44,6 +44,7 @@
             $("#success").change(function(){doUrl();});
             $("#agentId").change(function(){doUrl();});
             $("#jobId").change(function(){doUrl();});
+            $("#groupId").change(loadJobByGroup);
             $("#execType").change(function(){doUrl();});
         });
 
@@ -54,7 +55,40 @@
             var agentId = $("#agentId").val();
             var jobId = $("#jobId").val();
             var execType = $("#execType").val();
-            window.location.href = "${contextPath}/record/done.htm?queryTime=" + queryTime + "&success=" + success + "&agentId=" + agentId + "&jobId=" + jobId + "&execType=" + execType + "&pageSize=" + pageSize+"&csrf=${csrf}";
+            var groupId = $("#groupId").val();
+            window.location.href = "${contextPath}/record/done.htm?queryTime=" + queryTime + "&success=" + success + "&agentId=" + agentId + "&jobId=" + jobId + "&execType=" + execType + "&pageSize=" + pageSize+"&csrf=${csrf}&groupId="+groupId;
+        }
+
+        function loadJobByGroup() {
+            var selectGroup=$("#groupId").val();
+            $("#jobId").empty();
+
+            if(selectGroup){
+                $.ajax({
+                    headers:{"csrf":"${csrf}"},
+                    type:"POST",
+                    url:"${contextPath}/job/loadJobByGroupId.do",
+                    data:{"groupId":selectGroup},
+                    success:function(data){
+                        if(data){
+                            $("#jobId").append("<option value=''>全部</option>");
+
+//                            var json = $.parseJSON(data);
+                            for (var ind in data) {
+                                $("#jobId").append($("<option value='" + data[ind].jobId + "'>" + data[ind].jobName + "</option>"));
+                            }
+
+//                            for(var i=){
+//
+//                            }
+//                            $("#jobId").
+                        }
+
+
+                    }
+                });
+            }
+
         }
 
         function showRedo(id,length,groupId,count){
@@ -182,6 +216,7 @@
 
     <!-- Breadcrumb -->
     <ol class="breadcrumb hidden-xs">
+        <a href="javaScript:location.reload();" style="margin-left: 20px;margin-top: -3px; padding-right: 20px;"><i class="icon"></i>刷新</a>
         <li class="icon">&#61753;</li>
         当前位置：
         <li><a href="#">opencron</a></li>
@@ -209,6 +244,14 @@
                     <option value="">全部</option>
                     <c:forEach var="d" items="${agents}">
                         <option value="${d.agentId}" ${d.agentId eq agentId ? 'selected' : ''}>${d.name}</option>
+                    </c:forEach>
+                </select>
+                &nbsp;&nbsp;&nbsp;
+                <label for="groupId">作业分组：</label>
+                <select id="groupId" name="groupId" class="select-opencron" style="width: 110px;">
+                    <option value="">全部</option>
+                    <c:forEach var="t" items="${groups}">
+                        <option value="${t.id}" ${t.id eq groupId ? 'selected' : ''}>${t.name}&nbsp;</option>
                     </c:forEach>
                 </select>
                 &nbsp;&nbsp;&nbsp;
@@ -246,6 +289,7 @@
         <table class="table tile textured">
             <thead>
             <tr>
+                <th>执行编号</th>
                 <th>任务名称</th>
                 <th>执行器</th>
                 <th>执行命令</th>
@@ -263,44 +307,19 @@
                 <tbody class="tbody_${empty r.groupId ? r.recordId : r.groupId} tbody_${index.index}" style="border-top: none">
 
                     <tr class="tr-flow_${empty r.groupId ? "" : r.groupId}">
-                        <c:if test="${r.jobType eq 0}">
-                            <td id="row_${r.recordId}" rowspan="1">
-                                <center>
-                                    ${empty r.jobName ? 'batchJob' : r.jobName}
-                                    <c:forEach var="c" items="${r.childRecord}" varStatus="index">
-                                        <div style="display: none" class="redoIndex_${r.recordId}">
-                                            <div class="div-circle"><span class="span-circle">${index.count}</span></div>${c.jobName}
-                                        </div>
-                                    </c:forEach>
-                                </center>
-                            </td>
-                        </c:if>
-                        <c:if test="${r.jobType eq 1}">
-                            <td id="row_${r.groupId}" rowspan="1">
-                                <center>
+                        <td>${r.actionId}</td>
+                        <td id="row_${r.groupId}" rowspan="1">
+                            <center>
                                     ${r.jobName}
-                                    <c:if test="${r.redoCount ne 0}">
-                                        <c:forEach var="rc" items="${r.childRecord}" varStatus="index">
-                                            <div class="redoIndex_${r.recordId} groupIndex_${r.groupId}" style="display: none">
-                                                <div class="div-circle"><span class="span-circle">${index.count}</span></div>${rc.jobName}
-                                            </div>
-                                        </c:forEach>
-                                    </c:if>
-                                    <c:forEach var="t" items="${r.childJob}" varStatus="index">
-                                        <div class="flowIndex_${r.recordId} " style="display: none">
-                                            <div class="down"><i class="fa fa-arrow-down" style="font-size:14px" aria-hidden="true"></i></div>${t.jobName}
+                                <c:if test="${r.redoCount ne 0}">
+                                    <c:forEach var="rc" items="${r.childRecord}" varStatus="index">
+                                        <div class="redoIndex_${r.recordId} groupIndex_${r.groupId}" style="display: none">
+                                            <div class="div-circle"><span class="span-circle">${index.count}</span></div>${rc.jobName}
                                         </div>
-                                        <c:if test="${t.redoCount ne 0}">
-                                            <c:forEach var="tc" items="${t.childRecord}" varStatus="count">
-                                                <div class="redoIndex_${t.recordId} groupIndex_${r.groupId}" style="display: none">
-                                                    <div class="div-circle"><span class="span-circle">${count.count}</span></div>${tc.jobName}
-                                                </div>
-                                            </c:forEach>
-                                        </c:if>
                                     </c:forEach>
-                                </center>
-                            </td>
-                        </c:if>
+                                </c:if>
+                            </center>
+                        </td>
                         <td>${r.agentName}</td>
                         <td style="width: 25%" title="${cron:escapeHtml(r.command)}">
                             <div class="opencron_command">${cron:escapeHtml(r.command)}</div>
@@ -334,11 +353,7 @@
                         <td>
                             <center>
                                 <div class="visible-md visible-lg hidden-sm hidden-xs action-buttons">
-                                    <c:if test="${r.jobType eq 1 and r.childJob ne null}">
-                                        <a href="#" title="流程任务" onclick="showFlow(${r.recordId},'${fn:length(r.childJob)}','${r.groupId}')">
-                                            <i aria-hidden="true" class="fa fa-angle-double-down" style="font-size:15px;" childOpen="off" id="flowIcon_${r.recordId}"></i>
-                                        </a>&nbsp;&nbsp;
-                                    </c:if>
+
                                     <c:if test="${r.redoCount ne 0}">
                                         <a href="#" title="重跑记录" onclick="showRedo('${r.recordId}','${fn:length(r.childRecord)}',${empty r.groupId ? false : r.groupId},'1')">
                                             <i aria-hidden="true" class="fa fa-chevron-down groupIcon_${r.groupId}" redoOpen="off" id="redoIcon_${r.recordId}"></i>

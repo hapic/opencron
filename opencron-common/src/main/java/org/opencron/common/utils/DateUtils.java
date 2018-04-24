@@ -41,12 +41,15 @@ public abstract class DateUtils {
     public static String format = "yyyy-MM-dd HH:mm:ss";
 
     public static String format_day = "yyyy-MM-dd";
+    public static String format_day2 = "yyyyMMdd";
 
     public static String format_ms = "yyyy-MM-dd HH:mm:ss.S";
     //一天包含的毫秒数
     private static final long A_DAY_MILLISECONDS = 1000 * 60 * 60 * 24;
     //年月日格式化对象
     private static final DateFormat simpleDateFormat = new SimpleDateFormat(format_day);
+
+    private static final DateFormat simpleDateFormat2 = new SimpleDateFormat(format_day2);
     //年月日时分秒格式化对象
     private static final DateFormat fullDateFormat = new SimpleDateFormat(format);
 
@@ -76,6 +79,12 @@ public abstract class DateUtils {
             return null;
         }
         return fullDateFormat.format(date);
+    }
+    public static String formatDayDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return simpleDateFormat2.format(date);
     }
 
     public static Date parseSimpleDate(String dateStr) {

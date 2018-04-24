@@ -92,8 +92,6 @@
                         return false;
                     }
                 });
-            }).focus(function () {
-                $("#checkName").html('<b>*&nbsp;</b>执行器组名称必填');
             });
 
         });

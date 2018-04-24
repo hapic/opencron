@@ -151,6 +151,14 @@
                 </div><br>
 
                 <div class="form-group">
+                    <label for="maxRunning" class="col-lab control-label"><i class="glyphicon glyphicon-time"></i>&nbsp;&nbsp;并发数：</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control input-sm" id="maxRunning" name="maxRunning" value="${config.maxRunning}">
+                        <span class="tips"><b>*&nbsp;</b>同一时刻同时处于Running的job数</span>
+                    </div>
+                </div><br>
+
+                <div class="form-group">
                     <div class="col-md-offset-1 col-md-10">
                         <button type="button"  onclick="save()" class="btn btn-sm m-t-10"><i class="icon">&#61717;</i>&nbsp;保存</button>&nbsp;&nbsp;
                         <button type="button" onclick="history.back()" class="btn btn-sm m-t-10"><i class="icon">&#61740;</i>&nbsp;取消</button>

@@ -22,31 +22,36 @@
 
 package org.opencron.server.service;
 
+import com.mysql.jdbc.PacketTooBigException;
+import com.sun.org.apache.regexp.internal.RE;
+import org.opencron.common.exception.InvalidException;
 import org.opencron.common.exception.PingException;
 import org.opencron.common.job.Action;
+import org.opencron.common.job.Opencron;
 import org.opencron.common.job.Request;
 import org.opencron.common.job.Response;
+import org.opencron.common.utils.CommandUtils;
+import org.opencron.common.utils.CommonUtils;
 import org.opencron.common.utils.ParamsMap;
-import org.opencron.server.domain.Record;
-import org.opencron.server.domain.Agent;
-import org.opencron.server.domain.User;
+import org.opencron.common.utils.StringUtils;
+import org.opencron.server.DBException;
+import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronCaller;
 import org.opencron.server.job.OpencronMonitor;
+import org.opencron.server.until.CommonLock;
 import org.opencron.server.vo.JobVo;
-import com.mysql.jdbc.PacketTooBigException;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
 
 import static org.opencron.common.job.Opencron.*;
 
@@ -73,6 +78,19 @@ public class ExecuteService implements Job {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JobDependenceService jobDependenceService;
+
+    @Autowired
+    private JobGroupService jobGroupService;
+
+    @Autowired
+    private ConcurrencyControl concurrencyControl;
+
+    @Autowired
+    private JobActionGroupService jobActionGroupService;
+
+
     private Map<Long, Integer> reExecuteThreadMap = new HashMap<Long, Integer>(0);
 
     private static final String PACKETTOOBIG_ERROR = "在向MySQL数据库插入数据量过多,需要设定max_allowed_packet";
@@ -94,16 +112,38 @@ public class ExecuteService implements Job {
      * 基本方式执行任务，按任务类型区分
      */
     public boolean executeJob(final JobVo job) {
+        Long actionId= null;
 
-        JobType jobType = JobType.getJobType(job.getJobType());
-        switch (jobType) {
-            case SINGLETON:
-                return executeSingleJob(job, job.getUserId());//单一任务
-            case FLOW:
-                return executeFlowJob(job);//流程任务
-            default:
-                return false;
+        try {
+            if(job.getExecType().equals(Opencron.ExecType.OPERATOR.getStatus())){//如果是手动重跑模式
+                if(job.getRecordId()!=null){
+                    Record record = this.recordService.get(job.getRecordId());
+                    actionId=record.getActionId();
+                    logger.info("load job:{} old record:{} status:{} actionId:{}",job.getJobName(),record.getRecordId(),record.getStatus(),actionId);
+
+                    this.recordService.insertPendingReocrd(actionId,job);
+                }
+            }
+            if(actionId==null){
+                //根据Job 获取当前对应的GroupId
+                actionId = jobActionGroupService.acquire(job);
+                logger.info("load groupId:{} by job:{}",actionId,job.getJobName());
+            }
+
+            if(job.getFlowNum()==0 && !job.getExecType().equals(Opencron.ExecType.OPERATOR.getStatus())){//如果是根节点,并且不是手动执行
+                Lock lock = CommonLock.acquireLock(actionId.toString());
+                lock.lock();
+                    logger.info("save root action group by jobId:{}",job.getJobName());
+                    this.jobService.initRootPendingJob(job,actionId);
+                lock.unlock();
+                this.jobGroupService.clearActionId(actionId);
+            }
+        } catch (Exception e) {
+            logger.error(" error:{}",e.getMessage());
         }
+
+
+        return executeJob(job,actionId);
     }
 
     /**
@@ -144,6 +184,110 @@ public class ExecuteService implements Job {
         return record.getSuccess().equals(ResultStatus.SUCCESSFUL.getStatus());
     }
 
+
+    /**
+     * 每次执行一个Job
+     * @param job
+     * @param actionId
+     * @return
+     */
+    public boolean executeJob(JobVo job,Long actionId) {
+//        if (!checkJobPermission(job.getAgentId(), job.getUserId())) return false;
+        logger.info("start job:{} actionId:{}",job.getJobName(),actionId);
+
+        //验证当前组的任务是否已经做过
+        boolean haveDone=checkCurrentJobHaveDone(job,actionId);
+        if(haveDone){
+            logger.info("current Job:{} haved done or running",job.getJobName());
+            return false;
+        }
+        //判断所有的任务是否都做了
+        /**
+         * 手动执行模式不判断前置依赖任务的状态
+         */
+        if(!job.getExecType().equals(ExecType.OPERATOR.getStatus())){
+            logger.info(" job:{} execType:{} ",job.getJobName(),job.getExecType());
+            boolean allDone=judgeDependentJobsAllDone(job,actionId);
+            if(!allDone){
+                logger.info("job:{} dependent job not done!");
+                return false;
+            }
+        }
+
+
+        //判断Running中的任务数是否达到上限，如果已达到上限则记录当前任务的状态为pending稍后触发
+        //查询当前处于Runningd状态的记录
+        boolean b = false;
+        boolean aContinue=true;
+        try {
+            int runningCount=this.recordService.runningRecordCount();
+            logger.info("actionId:{} currintRunning count is:{}",actionId,runningCount);
+            aContinue= concurrencyControl.isContinue(runningCount);
+            if(!aContinue){
+                Record record = this.recordService.insertPendingReocrd(actionId, job);
+                logger.info("actionId:{} job:{} reach the line {} currentRunnint:{},save Redord:{}",actionId, job.getJobName(),concurrencyControl.getMaxRunning(),concurrencyControl.getCurrent(),record.getRecordId());
+                return false;
+            }
+            //真正的执行Job的
+            b = doThisJob(job, actionId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            if(aContinue){
+                concurrencyControl.out();
+            }
+        }
+        return b;
+    }
+
+
+    /**
+     * 验证当前记录是否已经做过
+     * @param job
+     * @param actionId
+     * @return
+     */
+    private boolean checkCurrentJobHaveDone(JobVo job, Long actionId) {
+        Record record = this.recordService.getRecord(actionId, job.getJobId());
+        if(record==null){
+            return false;
+        } else if(("-"+RunStatus.DONE.getStatus()
+                +"-"+RunStatus.RERUNDONE.getStatus()
+                +"-"+RunStatus.RUNNING.getStatus()
+                +"-"+RunStatus.RERUNNING.getStatus()
+                +"-").indexOf(record.getStatus())>-1){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 根据组ID和Job判断前置任务是否都已经成功完成
+     * @param job
+     * @return
+     */
+    private boolean judgeDependentJobsAllDone(JobVo job,Long actionId) {
+
+        //判断是否有前置job
+        List<JobVo> dependentJobs = jobDependenceService.dependentJob(job.getJobId());
+        boolean allDone=true;//是否都已经完成了
+        if(dependentJobs!=null && dependentJobs.size()>0){
+            for(JobVo jobVo:dependentJobs){//遍历前置依赖
+                Record record = recordService.getRecord(actionId, jobVo.getJobId());
+                if(record==null
+                        || !record.getSuccess().equals(ResultStatus.SUCCESSFUL.getStatus())//没有执行成功
+                        ){
+                    logger.info("job:{} depJob record:{} not done!",job.getJobId(),record==null?"null":record.getRecordId()+"");
+                    allDone=false;
+                    break;
+                }
+            }
+        }
+
+        return allDone;
+    }
+
+
     /**
      * 流程任务 按流程任务处理方式区分
      */
@@ -153,12 +297,12 @@ public class ExecuteService implements Job {
         final long groupId = System.nanoTime() + Math.abs(new Random().nextInt());//分配一个流程组Id
         final Queue<JobVo> jobQueue = new LinkedBlockingQueue<JobVo>();
         jobQueue.add(job);
-        jobQueue.addAll(job.getChildren());
+        jobQueue.addAll(job.getChildren());//所有孩子任务
         RunModel runModel = RunModel.getRunModel(job.getRunModel());
         switch (runModel) {
-            case SEQUENCE:
+            case SEQUENCE://串行
                 return executeSequenceJob(groupId, jobQueue);//串行任务
-            case SAMETIME:
+            case SAMETIME://并行
                 return executeSameTimeJob(groupId, jobQueue);//并行任务
             default:
                 return false;
@@ -211,6 +355,144 @@ public class ExecuteService implements Job {
     }
 
     /**
+     * 执行这个job的具体任务
+     * @param job
+     * @param actionId
+     * @return
+     */
+    private boolean doThisJob(JobVo job, Long actionId) {
+
+        Record record=this.recordService.getRecord(actionId,job.getJobId());
+        if(record==null){
+            throw new InvalidException("pening record not found");
+        }
+        if(job.getPause() && job.getExecType().equals(Opencron.ExecType.AUTO.getStatus())){//如果当前任务已经暂停了，则修改这个记录为暂停
+            record.setStatus(Opencron.RunStatus.STOPED.getStatus());
+            recordService.merge(record);
+            logger.info("job:{} pause,record:{} pause",job.getJobName(),record.getRecordId());
+            return false;
+        }
+
+        int i = this.recordService.updateRecordRequiresNew(record.getRecordId(), RunStatus.PENDING.getStatus(), RunStatus.RUNNING.getStatus());
+        if(i<1){
+            logger.info("record:{}  update {} by other thread already!",record.getRecordId(),RunStatus.RUNNING.getStatus());
+            return false;
+        }
+        //获取最新记录
+        record =recordService.getRecord(actionId,job.getJobId());
+        boolean success = true;
+
+        try {
+            //执行前先保存
+
+            //执行前先检测一次通信是否正常
+            checkPing(job, record);
+
+            Response result = responseToRecord(job, record);//执行远程端命令
+
+            logger.info(" action:{} job:{} result:{} record:{}",actionId,job.getJobName(),result.isSuccess(),record);
+            record.setUniqueCode(null);
+
+            if (!result.isSuccess()) {//如果没有成功
+                recordService.merge(record);
+                //被kill,直接退出
+                if (StatusCode.KILL.getValue().equals(result.getExitCode())) {
+                    recordService.flowJobDone(record);
+
+                } else {
+                    success = false;
+                }
+                return false;
+            }else{//如果成功了
+                recordService.merge(record);
+
+                initChildJob(actionId,job);//初始化所有任务的子任务
+
+                return true;
+            }
+
+        } catch (PingException e) {
+            recordService.flowJobDone(record);//通信失败,流程任务挂起.
+        }catch (Exception e){
+            if (e instanceof PacketTooBigException) {
+                record.setMessage(this.loggerError("execute failed(flow job):jobName:%s at ip:%s,port:%d,info:", job, PACKETTOOBIG_ERROR, e));
+            } else {
+                record.setMessage(this.loggerError("execute failed(flow job):jobName:%s at ip:%s,port:%d,info:%s", job, e.getMessage(), e));
+            }
+            record.setSuccess(ResultStatus.FAILED.getStatus());//程序调用失败
+            record.setReturnCode(StatusCode.ERROR_EXEC.getValue());
+            record.setEndTime(new Date());
+            recordService.merge(record);
+            success = false;
+            return false;
+        }finally {
+            //流程任务的重跑靠自身维护...
+            if (!success) {
+                Record red = recordService.get(record.getRecordId());
+                if (job.getRedo() == 1 && job.getRunCount() > 0) {
+                    int index = 0;
+                    boolean flag;
+                    do {
+                        flag = reExecuteJob(red, job, JobType.FLOW);
+                        ++index;
+                    } while (!flag && index < job.getRunCount());
+
+                    //重跑到截止次数还是失败,则发送通知,记录最终运行结果
+                    if (!flag) {
+                        noticeService.notice(job, null);
+                        recordService.flowJobDone(record);
+                    }
+                } else {
+                    noticeService.notice(job, null);
+                    recordService.flowJobDone(record);
+                }
+            }
+        }
+
+
+        return false;
+    }
+
+    /**
+     * 初始化所有孩子节点
+     * @param actionId
+     * @param job
+     */
+    public void initChildJob(Long actionId,JobVo job) {
+        if (!job.getLastChild()) {//如果不是最后一个节点则初始化后置任务的数据
+            List<JobVo> childeJobs=jobDependenceService.childsNodeJob(job.getJobId());
+            logger.info("action:{} job:{} childeSize:{}",actionId,job.getJobName(),childeJobs.size());
+            for(JobVo childJob:childeJobs){
+                try {
+                    Record pendingRecord = recordService.insertPendingReocrd(actionId,childJob);//加载下级任务的执行状态
+                    logger.info("job:{} child insert  into recordId:{}  ",job.getJobName(),pendingRecord.getRecordId());
+                } catch (Exception e) {
+                    DBException.business(e,"UK_UNIQUECODE");
+                    logger.info("insert job:{} record error:{}",childJob,e.getMessage());
+                    continue;
+                }
+            }
+        }
+    }
+
+
+    private Record createRecordByStatus(JobVo job,Long actionId,Integer status) {
+        Record record=this.recordService.getRecord(actionId,job.getJobId());
+        if(record!=null){
+            record.setStatus(status);
+            return record;
+        }
+        throw new InvalidException("pening record not found");
+//        record=new Record(job);
+//        record.setGroupId(job.getGroupId());//组Id
+//        record.setActionId(actionId);
+//        record.setJobType(job.getJobType());//job类型
+//        record.setFlowNum(job.getFlowNum());
+//        record.setStatus(status);//当前任务正在处理中
+//        return record;
+    }
+
+    /**
      * 流程任务（通用）执行过程
      */
     private boolean doFlowJob(JobVo job, long groupId) {
@@ -244,7 +526,6 @@ public class ExecuteService implements Job {
                     recordService.merge(record);
                     recordService.flowJobDone(record);
                 } else {
-                    //当前任务非流程任务最后一个子任务,全部流程任务为运行中...
                     record.setStatus(RunStatus.RUNNING.getStatus());
                     recordService.merge(record);
                 }
@@ -362,10 +643,14 @@ public class ExecuteService implements Job {
             //当前重跑任务成功,则父记录执行完毕
             if (result.isSuccess()) {
                 parentRecord.setStatus(RunStatus.RERUNDONE.getStatus());
+
+                initChildJob(parentRecord.getActionId(),job);
+
                 //重跑的某一个子任务被Kill,则整个重跑计划结束
             } else if (StatusCode.KILL.getValue().equals(result.getExitCode())) {
                 parentRecord.setStatus(RunStatus.RERUNDONE.getStatus());
             } else {
+
                 //已经重跑到最后一次了,还是失败了,则认为整个重跑任务失败,发送通知
                 if (parentRecord.getRunCount().equals(parentRecord.getRedoCount())) {
                     noticeService.notice(job, null);
@@ -422,6 +707,7 @@ public class ExecuteService implements Job {
         ExecutorService exec = Executors.newCachedThreadPool();
 
         for (final Record cord : recordQueue) {
+            record.setUniqueCode(null);
             Runnable task = new Runnable() {
                 @Override
                 public void run() {
@@ -468,7 +754,7 @@ public class ExecuteService implements Job {
     /**
      * 向执行器发送请求，并封装响应结果
      */
-    private Response responseToRecord(final JobVo job, final Record record) throws Exception {
+    public Response responseToRecord(final JobVo job, final Record record) throws Exception {
         Response response = opencronCaller.call(Request.request(job.getIp(), job.getPort(), Action.EXECUTE, job.getPassword())
                 .putParam("command", job.getCommand())
                 .putParam("pid", record.getPid())
@@ -512,7 +798,7 @@ public class ExecuteService implements Job {
     /**
      * 任务执行前 检测通信
      */
-    private void checkPing(JobVo job, Record record) throws PingException {
+    public void checkPing(JobVo job, Record record) throws PingException {
         boolean ping = ping(job.getAgent());
         if ( ! ping ) {
             record.setStatus(RunStatus.DONE.getStatus());//已完成
@@ -586,7 +872,7 @@ public class ExecuteService implements Job {
     /**
      * 校验任务执行权限
      */
-    private boolean checkJobPermission(Long jobAgentId, Long userId) {
+    public boolean checkJobPermission(Long jobAgentId, Long userId) {
         if (userId == null) return false;
         User user = userService.getUserById(userId);
         //超级管理员拥有所有执行器的权限

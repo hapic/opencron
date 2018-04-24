@@ -106,6 +106,7 @@ public class DashboardController extends BaseController {
          * job
          */
         List<Job> singleton = jobService.getJobsByJobType(session, Opencron.JobType.SINGLETON);
+
         List<Job> flow = jobService.getJobsByJobType(session, Opencron.JobType.FLOW);
 
         model.addAttribute("singleton", singleton.size());

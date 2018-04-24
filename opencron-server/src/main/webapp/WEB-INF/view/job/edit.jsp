@@ -27,8 +27,89 @@
     <script type="text/javascript" src="${contextPath}/static/js/job.validata.js"></script>
 
     <script type="text/javascript">
+
+
+        function save() {
+           return checkCycle();
+        }
+
+
+        /**
+         * 验证当前选择的是否有循环依赖
+         */
+        function checkCycle() {
+            var selected = [];
+            $('#dependenceid option:selected').each(function() {
+                selected.push($(this).val());
+            });
+            var data={
+                csrf:'${csrf}',
+                jobId:${job.jobId},
+                dependenceid:selected
+            };
+            var goon=false;
+            $.ajax({
+                type : "POST",
+                url : "${contextPath}/job/checkCycle.do",
+                data : data,
+                dataType : "json",
+                async : false,
+                traditional:true,
+                success : function(cycle) {
+                    if(cycle){
+                        $("#save-btn").attr("disabled", true);
+                        swal({
+                            title: "出问题了",
+                            text: "依赖任务会出现环路",
+                            type: "error"
+                        });
+
+                    }else{
+                        $("#save-btn").attr("disabled", false);
+                        swal({
+                            title: "",
+                            text: "可以保存",
+                            type: "success"
+                        });
+                    }
+                    goon= !cycle;
+                }
+            });
+            return goon;
+        }
+
         $(document).ready(function () {
             opencronValidata = new Validata('${contextPath}','${csrf}','${job.jobId}');
+            $('#dependenceid').multiselect({
+                onChange: function(option, checked, select) {
+                    //判断选择的是什么运行模式
+                    var selectedOptions = $('#dependenceid option:selected');
+                    if(selectedOptions.length>0){//如果有选择依赖任务
+                        opencron.tipDefault("#cronExp");
+                        $(".execTypeDiv").hide();
+                        $(".timeExpDiv").hide();
+                    }else{
+                        $(".execTypeDiv").show();
+
+                        var execTypeVal=$("input[name='execType']:checked").val();
+                        if(execTypeVal==0){//如果选择的是自动
+                            $(".cronExpDiv").show();
+                        }else{
+                            $(".cronExpDiv").hide();
+                        }
+                    }
+                }
+            });
+
+
+            $("#checkCycle").unbind("click");
+            $("#checkCycle").bind("click",checkCycle);
+
+            <c:if test="${fn:length(dependenceMap)>0}">
+                opencron.tipDefault("#cronExp");
+                $(".execTypeDiv").hide();
+                $(".timeExpDiv").hide();
+            </c:if>
         });
     </script>
 
@@ -60,7 +141,7 @@
 
     <div class="block-area" id="basic">
         <div class="tile p-15">
-            <form class="form-horizontal" role="form" id="jobform" action="${contextPath}/job/save.do" method="post"><br>
+            <form class="form-horizontal" role="form" id="jobform" action="${contextPath}/job/edit.do" method="post" onsubmit="return save()"><br>
                 <input type="hidden" name="csrf" value="${csrf}">
                 <input type="hidden" id="jobId" name="jobId" value="${job.jobId}">
                 <input type="hidden" name="command" id="command">
@@ -75,6 +156,8 @@
                     </div>
                 </div><br>
 
+
+
                 <div class="form-group">
                     <label for="agentId" class="col-lab control-label wid150"><i class="glyphicon glyphicon-leaf"></i>&nbsp;&nbsp;执&nbsp;&nbsp;行&nbsp;&nbsp;器&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
@@ -83,8 +166,35 @@
                         <span class="tips">&nbsp;&nbsp;要执行此作业的机器名称和IP地址</span>
                     </div>
                 </div><br>
+                <div class="form-group">
+                    <label for="groupName" class="col-lab control-label wid150"><i class="glyphicon glyphicon-tasks"></i>&nbsp;&nbsp;分组名称：</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control input-sm" id="groupName" value="${job.groupName}" readonly>
+                        <font color="red">&nbsp;*只读</font>
+                    </div>
+                </div><br>
 
                 <div class="form-group">
+                    <label for="dependenceid" class="col-lab control-label wid150"><i class="glyphicon glyphicon-tasks"></i>&nbsp;&nbsp;前置依赖：</label>
+                    <div class="col-md-10">
+                        <select class="multiselect" title="依赖任务" multiple="multiple" id="dependenceid" name="dependenceid">
+                            <c:forEach items="${jobs}" var="list">
+                                <c:set var="flag" value="false"></c:set>
+                                <c:if test="${!empty dependenceMap[list.jobId] }">
+                                    <option  value="${list.jobId}"  selected="selected" >${list.jobName}</option>
+                                    <c:set var="flag" value="true"></c:set>
+                                </c:if>
+                                <c:if test="${flag==false}">
+                                    <option  value="${list.jobId}">${list.jobName}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                        <button type="button" id="checkCycle" class="btn btn-primary">验证</button>
+                    </div>
+
+                </div><br>
+
+                <div class="form-group execTypeDiv">
                     <label class="col-lab control-label wid150"><i class="glyphicon glyphicon-info-sign"></i>&nbsp;&nbsp;运行模式&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <label for="execType0" class="radio-label"><input type="radio" name="execType" id="execType0" value="0" ${job.execType eq 0 ? 'checked' : ''}>自动&nbsp;&nbsp;&nbsp;</label>
@@ -107,7 +217,7 @@
                 </div>
                 <br>
 
-                <div class="form-group cronExpDiv" style="display: ${job.execType eq 0 ? 'block' : 'none'}">
+                <div class="form-group cronExpDiv timeExpDiv" style="display: ${job.execType eq 0 ? 'block' : 'none'}">
                     <label for="cronExp" class="col-lab control-label wid150"><i class="glyphicon glyphicon-filter"></i>&nbsp;&nbsp;时间规则&nbsp;&nbsp;<b>*&nbsp;</b></label>
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="cronExp" name="cronExp" value="${job.cronExp}">
@@ -171,56 +281,6 @@
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="timeout" name="timeout" value="${job.timeout}">
                         <span class="tips" tip="执行作业允许的最大时间,超过则为超时(0:忽略超时时间,分钟为单位)">执行作业允许的最大时间,超过则为超时(0:忽略超时时间,分钟为单位)</span>
-                    </div>
-                </div>
-                <br>
-
-                <div class="form-group">
-                    <label class="col-lab control-label wid150"><i class="glyphicon  glyphicon-random"></i>&nbsp;&nbsp;作业类型&nbsp;&nbsp;<b>*&nbsp;</b></label>
-                    <div class="col-md-10">
-                        <label for="jobType0" class="radio-label"><input type="radio" name="jobType" value="0" id="jobType0" ${job.jobType eq 0 ? 'checked' : ''}>单一作业&nbsp;&nbsp;&nbsp;</label>
-                        <label for="jobType1" class="radio-label"><input type="radio" name="jobType" value="1" id="jobType1" ${job.jobType eq 1 ? 'checked' : ''}>流程作业</label>&nbsp;&nbsp;&nbsp;
-                        <br><span class="tips" id="jobTypeTip">单一作业: 当前定义作业为要执行的目标&nbsp;流程作业: 有多个作业组成作业组</span>
-                    </div>
-                </div>
-                <br>
-
-                <div class="form-group" id="subJob">
-                    <span>
-                        <label class="col-lab control-label wid150"><i class="glyphicon glyphicon-tag"></i>&nbsp;&nbsp;子&nbsp;&nbsp;作&nbsp;&nbsp;&nbsp;业&nbsp;&nbsp;&nbsp;&nbsp;</label>
-                        <div class="col-md-10">
-                            <a data-toggle="modal" href="#jobModal" onclick="opencronValidata.subJob.add()" class="btn btn-sm m-t-10">添加子作业</a>
-                            <ul id="subJobDiv" class="subJobUl">
-                            <c:forEach var="c" items="${job.children}">
-                                <li id="${c.jobId}" >
-                                    <span  onclick="opencronValidata.subJob.edit('${c.jobId}')">
-                                        <a data-toggle="modal" href="#jobModal" title="编辑"><i class="glyphicon glyphicon-pencil"></i>&nbsp;&nbsp;<span id="name_${c.jobId}">${c.jobName}</span></a>
-                                    </span>
-                                    <span class='delSubJob' onclick='opencronValidata.subJob.remove(this)'>
-                                        <a href='javascript:void(0)' title='删除'><i class='glyphicon glyphicon-trash'></i></a>
-                                    </span>
-                                    <input type="hidden" name="child.jobId" value="${c.jobId}">
-                                    <input type="hidden" name="child.jobName" value="${c.jobName}">
-                                    <input type="hidden" name="child.agentId" value="${c.agentId}">
-                                    <input type="hidden" name="child.redo" value="${c.redo}">
-                                    <input type="hidden" name="child.runCount" value="${c.runCount}">
-                                    <input type="hidden" name="child.command" value="${cron:toBase64(c.command)}">
-                                    <input type="hidden" name="child.timeout" value="${c.timeout}">
-                                    <input type="hidden" name="child.runAs" value="${c.runAs}">
-                                    <input type="hidden" name="child.successExit" value="${c.successExit}">
-                                    <input type="hidden" name="child.comment" value="${c.comment}">
-                                </li>
-                            </c:forEach>
-                        </div>
-                    </span>
-                </div><br>
-
-                <div class="form-group" id="runModel" style="display:none">
-                    <label class="col-lab control-label wid150"><i class="glyphicon  glyphicon-sort-by-attributes"></i>&nbsp;&nbsp;运行顺序&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
-                    <div class="col-md-10">
-                        <label for="runModel0" class="radio-label"><input type="radio" name="runModel" value="0" id="runModel0" ${job.runModel eq 0 ? 'checked' : ''}>串行&nbsp;&nbsp;&nbsp;</label>
-                        <label for="runModel1" class="radio-label"><input type="radio" name="runModel" value="1" id="runModel1" ${job.runModel eq 1 ? 'checked' : ''}>并行</label>&nbsp;&nbsp;&nbsp;
-                        <br><span class="tips" id="runModelTip">串行: 流程任务里的每个任务按照定义的顺序依次执行</span>
                     </div>
                 </div>
                 <br>
@@ -303,6 +363,8 @@
                                 <span class="tips" tip="必填项,该作业的名称">必填项,该作业的名称</span>
                             </div>
                         </div>
+
+
 
                         <div class="form-group">
                             <label for="cmd1" class="col-lab control-label wid100" title="请采用unix/linux的shell支持的命令">执行命令&nbsp;<b>*</b></label>
