@@ -24,7 +24,8 @@
                         "size":"${size}",
                         "queryTime":"${queryTime}",
                         "agentId":"${agentId}",
-                        "jobId":"${jobId}",
+                        "groupId":"${groupId}",
+                        "status":"${status}",
                         "execType":"${execType}",
                         "pageNo":${pageBean.pageNo},
                         "pageSize":${pageBean.pageSize}
@@ -43,16 +44,18 @@
 
             $("#size").change(function(){doUrl();});
             $("#agentId").change(function(){doUrl();});
-            $("#jobId").change(function(){doUrl();});
+            $("#groupId").change(function(){doUrl();});
+            $("#status").change(function(){doUrl();});
             $("#execType").change(function(){doUrl();});
         });
         function doUrl() {
             var pageSize = $("#size").val();
             var queryTime = $("#queryTime").val();
             var agentId = $("#agentId").val();
-            var jobId = $("#jobId").val();
+            var groupId = $("#groupId").val();
             var execType = $("#execType").val();
-            window.location.href = "${contextPath}/record/running.htm?queryTime=" + queryTime + "&agentId=" + agentId + "&jobId=" + jobId + "&execType=" + execType + "&pageSize=" + pageSize+"&csrf=${csrf}";
+            var status = $("#status").val();
+            window.location.href = "${contextPath}/record/running.htm?queryTime=" + queryTime + "&agentId=" + agentId + "&groupId=" + groupId + "&execType=" + execType + "&pageSize=" + pageSize+"&csrf=${csrf}&status="+status;
         }
 
         function killJob(id){
@@ -97,7 +100,7 @@
                                 headers:{"csrf":"${csrf}"},
                                 type:"POST",
                                 url:"${contextPath}/job/execute.do",
-                                data:{"id":jobId}
+                                data:{"id":jobId,"recordId":id}
                             });
                         }
                     }
@@ -149,12 +152,22 @@
                         <option value="${d.agentId}" ${d.agentId eq agentId ? 'selected' : ''}>${d.name}</option>
                     </c:forEach>
                 </select>
+
                 &nbsp;&nbsp;&nbsp;
-                <label for="jobId">作业名称：</label>
-                <select id="jobId" name="jobId" class="select-opencron" style="width: 80px;">
+                <label for="status">执行状态：</label>
+                <select id="status" name="status" class="select-opencron" style="width: 80px;">
                     <option value="">全部</option>
-                    <c:forEach var="t" items="${jobs}">
-                        <option value="${t.jobId}" ${t.jobId eq jobId ? 'selected' : ''}>${t.jobName}&nbsp;</option>
+                    <option value="7" ${status eq 7 ? 'selected' : ''}>待执行</option>
+                    <option value="0" ${status eq 0 ? 'selected' : ''}>运行中</option>
+                    <option value="2" ${status eq 2 ? 'selected' : ''}>停止中</option>
+                    <option value="4" ${status eq 4 ? 'selected' : ''}>重跑中</option>
+                </select>
+                &nbsp;&nbsp;&nbsp;
+                <label for="groupId">作业分组：</label>
+                <select id="groupId" name="groupId" class="select-opencron" style="width: 80px;">
+                    <option value="">全部</option>
+                    <c:forEach var="t" items="${groups}">
+                        <option value="${t.id}" ${t.id eq groupId ? 'selected' : ''}>${t.name}&nbsp;</option>
                     </c:forEach>
                 </select>
                 &nbsp;&nbsp;&nbsp;
@@ -166,6 +179,7 @@
                     <option value="2" ${execType eq 2 ? 'selected' : ''}>重跑</option>
                     <option value="3" ${execType eq 3 ? 'selected' : ''}>现场</option>
                 </select>
+
                 &nbsp;&nbsp;&nbsp;
                 <label for="queryTime">开始时间：</label>
                 <input type="text" id="queryTime" name="queryTime" value="${queryTime}" onfocus="WdatePicker({onpicked:function(){doUrl(); },dateFmt:'yyyy-MM-dd'})" class="Wdate select-opencron" style="width: 90px"/>
@@ -175,6 +189,7 @@
         <table class="table tile textured">
             <thead>
             <tr>
+                <th>执行编号</th>
                 <th>作业名称</th>
                 <th>执行器</th>
                 <th>运行状态</th>
@@ -191,6 +206,7 @@
 
             <c:forEach var="r" items="${pageBean.result}" varStatus="index">
                 <tr>
+                    <td>${r.actionId}</td>
                     <td>
                         <c:if test="${empty r.jobName}">batchJob</c:if>
                         <c:if test="${!empty r.jobName}"><a href="${contextPath}/job/detail/${r.jobId}.htm?csrf=${csrf}">${r.jobName}</a></c:if>
@@ -200,6 +216,7 @@
                         <div class="progress progress-striped progress-success active" style="margin-top:3px;width: 80%;height: 14px;" >
                             <div style="width:100%;height: 100%;" class="progress-bar">
                                 <span id="process_${r.recordId}">
+                                    <c:if test="${r.status eq 7}">待执行..</c:if>
                                     <c:if test="${r.status eq 0}">运行中</c:if>
                                     <c:if test="${r.status eq 2}">停止中</c:if>
                                     <c:if test="${r.status eq 4}">重跑中</c:if>
@@ -244,7 +261,7 @@
             </tbody>
         </table>
 
-        <cron:pager href="${contextPath}/record/running.htm?queryTime=${queryTime}&agentId=${agentId}&jobId=${jobId}&execType=${execType}&csrf=${csrf}" id="${pageBean.pageNo}" size="${pageBean.pageSize}" total="${pageBean.totalCount}"/>
+        <cron:pager href="${contextPath}/record/running.htm?queryTime=${queryTime}&agentId=${agentId}&jobId=${jobId}&execType=${execType}&csrf=${csrf}&groupId=${groupId}&status=${status}" id="${pageBean.pageNo}" size="${pageBean.pageSize}" total="${pageBean.totalCount}"/>
 
     </div>
 

@@ -24,6 +24,7 @@ package org.opencron.server.controller;
 import javax.servlet.http.HttpSession;
 
 import org.opencron.common.job.Opencron;
+import org.opencron.server.domain.JobGroup;
 import org.opencron.server.domain.Record;
 import org.opencron.server.service.*;
 import org.opencron.server.tag.PageBean;
@@ -35,6 +36,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
 
 import static org.opencron.common.utils.CommonUtils.notEmpty;
 
@@ -53,6 +56,9 @@ public class RecordController extends BaseController {
 
     @Autowired
     private ExecuteService executeService;
+
+    @Autowired
+    private JobGroupService jobGroupService;
 
     /**
      * 查询已完成任务列表
@@ -76,10 +82,19 @@ public class RecordController extends BaseController {
 
         if (notEmpty(recordVo.getAgentId())) {
             model.addAttribute("agentId", recordVo.getAgentId());
-            model.addAttribute("jobs", jobService.getJobByAgentId(recordVo.getAgentId()));
-        } else {
-            model.addAttribute("jobs", jobService.getAll());
+            model.addAttribute("jobs", jobService.getJobByAgentId(recordVo.getAgentId(),recordVo.getGroupId()));
+        }else{
+            model.addAttribute("jobs", jobService.getAll(recordVo.getGroupId()));
         }
+
+
+
+        if (notEmpty(recordVo.getGroupId())) {
+           model.addAttribute("groupId",recordVo.getGroupId());
+        }
+
+
+         model.addAttribute("groups", jobGroupService.getAll());
 
         if (notEmpty(recordVo.getJobId())) {
             model.addAttribute("jobId", recordVo.getJobId());
@@ -102,10 +117,10 @@ public class RecordController extends BaseController {
 
         if (notEmpty(recordVo.getAgentId())) {
             model.addAttribute("agentId", recordVo.getAgentId());
-            model.addAttribute("jobs", jobService.getJobByAgentId(recordVo.getAgentId()));
-        } else {
-            model.addAttribute("jobs", jobService.getAll());
         }
+         List<JobGroup> allOrbyGroupId =
+                 jobGroupService.getAllOrbyGroupId(null);
+         model.addAttribute("groups",allOrbyGroupId);
 
         if (notEmpty(recordVo.getJobId())) {
             model.addAttribute("jobId", recordVo.getJobId());
@@ -113,6 +128,13 @@ public class RecordController extends BaseController {
         if (notEmpty(queryTime)) {
             model.addAttribute("queryTime", queryTime);
         }
+        if(notEmpty(recordVo.getGroupId())){
+            model.addAttribute("groupId",recordVo.getGroupId());
+        }
+         if(notEmpty(recordVo.getStatus())){
+             model.addAttribute("status",recordVo.getStatus());
+         }
+
         if (notEmpty(recordVo.getExecType())) {
             model.addAttribute("execType", recordVo.getExecType());
         }
@@ -142,9 +164,10 @@ public class RecordController extends BaseController {
         if (Opencron.RunStatus.RERUNNING.getStatus().equals(record.getStatus())) {
             //父记录临时改为停止中
             record.setStatus(Opencron.RunStatus.STOPPING.getStatus());
+            record.setUniqueCode(null);
             recordService.merge(record);
             //得到当前正在重跑的子记录
-            record = recordService.getReRunningSubJob(recordId);
+            record = recordService.getReRunningSubJob(record.getActionId());
         }
         if (!jobService.checkJobOwner(session, record.getUserId())) return false;
         return executeService.killJob(record);

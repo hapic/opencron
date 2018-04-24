@@ -15,7 +15,6 @@
         <param-name>contextConfigLocation</param-name>
         <param-value>
             classpath*:app-place.xml,
-            classpath*:app-datasource.xml,
             classpath*:app-websocket.xml
         </param-value>
     </context-param>

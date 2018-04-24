@@ -26,8 +26,6 @@ import org.opencron.common.job.Opencron;
 import org.opencron.server.job.OpencronCollector;
 import org.opencron.server.vo.JobVo;
 import org.quartz.*;
-import org.quartz.Job;
-import org.quartz.Scheduler;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -74,6 +73,7 @@ public final class SchedulerService {
     }
 
     public void put(JobVo job, Job jobBean) throws SchedulerException {
+        //创建quartz的执行表达式
         TriggerKey triggerKey = TriggerKey.triggerKey(job.getJobId().toString());
         CronTrigger cronTrigger = newTrigger().withIdentity(triggerKey).withSchedule(cronSchedule(job.getCronExp())).build();
 
@@ -82,6 +82,7 @@ public final class SchedulerService {
             this.remove(job.getJobId());
         }
         //add new job 。。。
+        //创建执行任务的实体
         JobDetail jobDetail = JobBuilder.newJob(jobBean.getClass()).withIdentity(JobKey.jobKey(job.getJobId().toString())).build();
         jobDetail.getJobDataMap().put(job.getJobId().toString(), job);
         jobDetail.getJobDataMap().put("jobBean", jobBean);
@@ -127,6 +128,12 @@ public final class SchedulerService {
         }
     }
 
+    /**
+     *  同步任务状态
+     * @param jobId
+     * @param executeService
+     * @throws SchedulerException
+     */
     public void syncJobTigger(Long jobId, ExecuteService executeService) throws SchedulerException {
         JobVo job = jobService.getJobVoById(jobId);
 
@@ -142,8 +149,9 @@ public final class SchedulerService {
         }
 
         job.setAgent(agentService.getAgent(job.getAgentId()));
-        //自动执行
-        if (Opencron.ExecType.AUTO.getStatus().equals(job.getExecType())) {
+        //自动执行 只有flunum=0的job才添加到自动执行列表中
+        if (Opencron.ExecType.AUTO.getStatus().equals(job.getExecType())
+                && job.getFlowNum()==0) {
             if (Opencron.CronType.QUARTZ.getType().equals(job.getCronType())) {
                 /**
                  * 将作业加到quartz任务计划

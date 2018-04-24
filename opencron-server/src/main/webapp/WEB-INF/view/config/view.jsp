@@ -102,6 +102,24 @@
                 </td>
             </tr>
             <tr>
+                <td class="item"><i class="glyphicon glyphicon-font"></i>&nbsp;并发数：</td>
+                <td> <span id="currentRunningJob">0</span>/${config.maxRunning} &nbsp;&nbsp;&nbsp;<img src='${contextPath}/static/img/icon-loader.gif' style="width: 14px;height: 14px"></td>
+                <script>
+                    window.setInterval(function(){
+                        $.ajax({
+                            headers:{"csrf":"${csrf}"},
+                            type:"POST",
+                            url: "${contextPath}/config/currentRunning.do",
+                            data: {},
+                            success:function (data) {
+                                $("#currentRunningJob").html(data);
+                            }
+                        });
+                    },2000);
+
+                </script>
+            </tr>
+            <tr>
                 <td class="item"><i class='glyphicon glyphicon-trash'></i>&nbsp;清理记录：</td>
                 <td>
                     <label for="startTime" class="label-self">时间&nbsp;: </label>

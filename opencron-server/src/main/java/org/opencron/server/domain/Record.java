@@ -42,6 +42,8 @@ public class Record implements Serializable {
     private Long userId;
 
 
+
+
     @Lob
     @Column(columnDefinition="text")
     private String command;
@@ -66,6 +68,8 @@ public class Record implements Serializable {
 
     private Long groupId;
 
+    private Long actionId;
+
     /**
      * 流程任务的执行序号
      */
@@ -75,6 +79,9 @@ public class Record implements Serializable {
      * 任务类型(0:单一任务,1:流程任务)
      */
     private Integer jobType;
+
+    //插入时防止重复的多余字段
+    private String uniqueCode;
 
     public Record() {
     }
@@ -91,7 +98,17 @@ public class Record implements Serializable {
         this.setRedoCount(0);//运行次数
         this.setSuccess(Opencron.ResultStatus.SUCCESSFUL.getStatus());
         this.setStatus(Opencron.RunStatus.RUNNING.getStatus());//任务还未完成
+        this.setFlowNum(jobVo.getFlowNum());
         this.setPid(CommonUtils.uuid());
+    }
+
+
+    public String getUniqueCode() {
+        return uniqueCode;
+    }
+
+    public void setUniqueCode(String uniqueCode) {
+        this.uniqueCode = uniqueCode;
     }
 
     public Long getRecordId() {
@@ -254,6 +271,14 @@ public class Record implements Serializable {
         this.flowNum = flowNum;
     }
 
+
+    public Long getActionId() {
+        return actionId;
+    }
+
+    public void setActionId(Long actionId) {
+        this.actionId = actionId;
+    }
 
     @Override
     public String toString() {

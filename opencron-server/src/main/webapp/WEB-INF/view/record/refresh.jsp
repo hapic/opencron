@@ -12,6 +12,7 @@
 
 <c:forEach var="r" items="${pageBean.result}" varStatus="index">
     <tr>
+        <td>${r.actionId}</td>
         <td>
             <c:if test="${empty r.jobName}">batchJob</c:if>
             <c:if test="${!empty r.jobName}"><a href="${contextPath}/job/detail/${r.jobId}.htm?csrf=${csrf}">${r.jobName}</a></c:if>
@@ -21,6 +22,7 @@
             <div class="progress progress-striped progress-success active" style="margin-top:3px;width: 80%;height: 14px;" >
                 <div style="width:100%;height: 100%;" class="progress-bar">
                     <span id="process_${r.recordId}">
+                        <c:if test="${r.status eq 7}">待执行..</c:if>
                         <c:if test="${r.status eq 0}">运行中</c:if>
                         <c:if test="${r.status eq 2}">停止中</c:if>
                         <c:if test="${r.status eq 4}">重跑中</c:if>

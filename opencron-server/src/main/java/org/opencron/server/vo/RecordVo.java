@@ -75,6 +75,16 @@ public class RecordVo implements Serializable {
     //是否为流程任务的最后一个子任务
     private Boolean lastChild;
 
+    private Long actionId;
+
+    public Long getActionId() {
+        return actionId;
+    }
+
+    public void setActionId(Long actionId) {
+        this.actionId = actionId;
+    }
+
     public Long getRecordId() {
         return recordId;
     }

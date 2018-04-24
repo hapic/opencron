@@ -77,3 +77,16 @@
 
 
 
+    <!-- choice -->
+    <script type="text/javascript" src="${contextPath}/static/js/bootstrap-multiselect.js?resId=${resourceId}" ></script>
+    <link rel="stylesheet" href='${contextPath}/static/css/bootstrap-multiselect.css?resId=${resourceId}' />
+
+
+
+
+<script type="text/javascript" src="${contextPath}/static/gentleSelect/jquery-gentleSelect.js"></script>
+
+<link type="text/css" href="${contextPath}/static/gentleSelect/jquery-gentleSelect.css" rel="stylesheet" />
+
+
+

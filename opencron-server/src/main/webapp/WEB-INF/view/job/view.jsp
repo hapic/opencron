@@ -8,11 +8,17 @@
 <head>
 
     <style type="text/css">
+        #cy {
+            height: 600px;
+            width: 900px;
+            background: none
+        }
         .none {
             text-align: center;
         }
     </style>
-
+    <script type="text/javascript" src="${contextPath}/static/js/go.js"></script>
+    <script type="text/javascript" src="${contextPath}/static/js/diagram.js"></script>
     <script type="text/javascript">
 
         var toggle = {
@@ -372,6 +378,9 @@
             $("#redo").change(function () {
                 doUrl();
             });
+            $("#groupId").change(function () {
+                doUrl();
+            });
             $("#jobName").focus(function () {
                 $("#checkJobName").html("");
             });
@@ -437,10 +446,11 @@
             var pageSize = $("#size").val();
             var agentId = $("#agentId").val();
             var cronType = $("#cronType").val();
-            var jobType = $("#jobType").val();
+//            var jobType = $("#jobType").val();
             var execType = $("#execType").val();
             var redo = $("#redo").val();
-            window.location.href = "${contextPath}/job/view.htm?agentId=" + agentId + "&cronType=" + cronType + "&jobType=" + jobType + "&execType=" + execType + "&redo=" + redo + "&pageSize=" + pageSize + "&csrf=${csrf}";
+            var groupId = $("#groupId").val();
+            window.location.href = "${contextPath}/job/view.htm?agentId=" + agentId + "&cronType=" + cronType + "&groupId=" + groupId + "&execType=" + execType + "&redo=" + redo + "&pageSize=" + pageSize + "&csrf=${csrf}";
         }
 
         function pauseJob(id,status) {
@@ -603,6 +613,8 @@
                         alert("该作业不存在,删除失败!")
                     } else if (data == "false") {
                         alert("该作业正在运行中,删除失败!")
+                    } else if (data == "child") {
+                        alert("有依赖当前的任务，删除失败!")
                     } else {
                         ajax({
                             headers: {"csrf": "${csrf}"},
@@ -621,8 +633,13 @@
                 })
             });
         }
+
+
+
     </script>
 </head>
+
+
 
 <body>
 
@@ -673,11 +690,12 @@
                 </select>
 
                 &nbsp;&nbsp;&nbsp;
-                <label for="jobType">作业类型：</label>
-                <select id="jobType" name="jobType" class="select-opencron" style="width: 90px;">
+                <label for="groupId">作业分组：</label>
+                <select id="groupId" name="groupId" class="select-opencron" style="width: 110px;">
                     <option value="">全部</option>
-                    <option value="0" ${jobType eq 0 ? 'selected' : ''}>单一作业</option>
-                    <option value="1" ${jobType eq 1 ? 'selected' : ''}>流程作业</option>
+                    <c:forEach var="t" items="${groups}">
+                        <option value="${t.id}" ${t.id eq groupId ? 'selected' : ''}>${t.name}&nbsp;</option>
+                    </c:forEach>
                 </select>
 
                 &nbsp;&nbsp;&nbsp;
@@ -696,7 +714,7 @@
                     <option value="0" ${redo eq 0 ? 'selected' : ''}>否</option>
                 </select>
 
-                <a href="${contextPath}/job/add.htm?csrf=${csrf}" class="btn btn-sm m-t-10"
+                <a href="${contextPath}/job/add.htm?csrf=${csrf}&groupId=${param.groupId}" class="btn btn-sm m-t-10"
                    style="margin-left: 20px;margin-bottom: 8px;margin-top: -3px;"><i class="icon">&#61943;</i>添加</a>
             </div>
         </div>
@@ -791,9 +809,7 @@
                     </td>
                     <td class="text-center">
                         <div class="visible-md visible-lg hidden-sm hidden-xs action-buttons">
-                            <c:if test="${r.jobType eq 1}">
-                                <a href="#" title="流程作业" id="job_${r.jobId}" childOpen="off" onclick="showChild('${r.jobId}','${r.flowId}')"> <i style="font-size:14px;" class="fa fa-angle-double-down" id="icon${r.jobId}"></i></a>&nbsp;&nbsp;
-                            </c:if>
+
                             <c:if test="${r.jobType eq 0}">
                                 <a href="#" title="编辑" onclick="editSingle('${r.jobId}')">
                                     <i class="glyphicon glyphicon-pencil"></i>
@@ -801,7 +817,7 @@
                             </c:if>
 
                             <c:if test="${r.jobType eq 1}">
-                                <a title="编辑" href="${contextPath}/job/editflow.htm?id=${r.jobId}&csrf=${csrf}">
+                                <a title="编辑" href="${contextPath}/job/editflow.htm?id=${r.jobId}&csrf=${csrf}&groupId=${r.groupId}">
                                     <i class="glyphicon glyphicon-pencil"></i>
                                 </a>
                             </c:if>&nbsp;
@@ -842,49 +858,7 @@
                         </div>
                     </td>
                 </tr>
-                <%--子作业--%>
-                <c:if test="${r.jobType eq 1}">
-                    <c:forEach var="c" items="${r.children}" varStatus="index">
-                        <tr class="child${r.jobId} trGroup${r.flowId}" style="display: none;">
-                            <td><a href="${contextPath}/agent/detail/${c.agentId}.htm?csrf=${csrf}">${c.agentName}</a>
-                            </td>
-                            <c:if test="${permission eq true}">
-                                <td>
-                                    <a href="${contextPath}/user/detail/${c.userId}.htm?csrf=${csrf}">${c.operateUname}</a>
-                                </td>
-                            </c:if>
-                            <c:if test="${permission eq false}">
-                                <td>${c.operateUname}</td>
-                            </c:if>
-                            <td style="width: 25%">
-                                <div class="opencron_command">
-                                    <a href="#" title="${cron:escapeHtml(c.command)}" class="dot-ellipsis dot-resize-update" onclick="editCmd('${c.jobId}')" id="command_${c.jobId}">
-                                            ${cron:escapeHtml(c.command)}
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                流程作业
-                            </td>
-                            <td>
-                                <div class="none">--</div>
-                            </td>
-                            <td>
-                                <div class="none">--</div>
-                            </td>
-                            <td>
-                                <div class="none">--</div>
-                            </td>
-                            <td class="text-center">
-                                <div class="visible-md visible-lg hidden-sm hidden-xs action-buttons">
-                                    <a href="${contextPath}/job/detail/${c.jobId}.htm?csrf=${csrf}" title="查看详情">
-                                        <i class="glyphicon glyphicon-eye-open"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                </c:if>
+
             </c:forEach>
             </tbody>
         </table>
@@ -928,7 +902,7 @@
                             <label for="cronType1" class="radio-label"><input type="radio" name="cronType" value="1" id="cronType1">quartz</label>
                         </div>
                         <br>
-                        <div class="form-group cronExpDiv">
+                        <div class="form-group cronExpDiv ">
                             <label for="cronExp" class="col-lab control-label" title="请采用对应类型的时间格式表达式">时间规则：</label>
                             <div class="col-md-9">
                                 <input type="text" class="form-control " id="cronExp"/>&nbsp;&nbsp;<label id="checkcronExp"></label>
@@ -1044,9 +1018,90 @@
         </div>
     </div>
 
+
+
+    <c:if test="${!empty groupId}">
+        <script>
+
+            $(function(){
+                var timestamp = Date.parse(new Date());
+                $.ajax({
+                    type : "POST",
+                    url : "${contextPath}/job/depJobByGroupId.do",
+                    data : {groupId:${param.groupId},csrf:'${csrf}'},
+                    dataType : "json",
+                    async:false,
+                    success : function(json) {
+                        var modules=[];
+                        var moduleshierarchy=[];
+                        var strJob="-";
+                        $.each(json, function(i, obj){
+                            var jsonData={}
+                            var node={};
+                            if(obj.dependenceJobId!=null){
+                                var edge={};
+                                edge["from"]=obj.dependenceJobId+"-"+timestamp;
+                                edge["to"]=obj.jobId+"-"+timestamp;
+                                moduleshierarchy.push(edge)
+                            }
+
+                            if(strJob.indexOf("-"+obj.jobId+"-")>0){
+                                return ;
+                            }
+                            strJob+=obj.jobId+"-";
+                            node["key"]=obj.jobId+"-"+timestamp;
+                            node["name"]=obj.jobName;
+                            if(obj.status==0){
+                                node["color"]="lightblue";//运行中的蓝色显示
+                            }else if(obj.status==1 && obj.success==1){//成功运行
+                                node["color"]="lightgreen";//成功运行，绿色显示
+                            }else if(obj.status==1 && obj.success!=1){//失败的
+                                node["color"]="red";//成功运行，绿色显示
+                            }else{
+                                node["color"]="lightgray";//其他都是待运行
+                            }
+                            modules.push(node);
+
+
+                        });
+                        if(moduleshierarchy.length>0){
+                            fillDiagramData("diagramDiv",modules,moduleshierarchy);
+                        }else{
+                            fillCycleDiagramData("diagramDiv",modules);
+                        }
+                    }
+                });
+
+
+            });
+
+        </script>
+
+        <div class="row">
+            <div class="col-md-12">
+                <!-- overview -->
+                <div class="tile " style="background: none">
+                    <div id="diagramDiv" style="height:600px"></div>
+
+
+                </div>
+            </div>
+        </div>
+    </c:if>
+
+
+
 </section>
 
+
+
+
+
+
 </body>
+<script>
+
+</script>
 
 </html>
 
