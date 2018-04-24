@@ -266,7 +266,7 @@ public class ExecuteService implements Job {
      * @param job
      * @return
      */
-    private boolean judgeDependentJobsAllDone(JobVo job,Long actionId) {
+    public boolean judgeDependentJobsAllDone(JobVo job,Long actionId) {
 
         //判断是否有前置job
         List<JobVo> dependentJobs = jobDependenceService.dependentJob(job.getJobId());
@@ -274,9 +274,10 @@ public class ExecuteService implements Job {
         if(dependentJobs!=null && dependentJobs.size()>0){
             for(JobVo jobVo:dependentJobs){//遍历前置依赖
                 Record record = recordService.getRecord(actionId, jobVo.getJobId());
-                if(record==null
-                        || !record.getSuccess().equals(ResultStatus.SUCCESSFUL.getStatus())//没有执行成功
-                        ){
+                if(record==null ||
+                        !(record.getSuccess().equals(ResultStatus.SUCCESSFUL.getStatus())
+                                && (record.getStatus().equals(RunStatus.DONE.getStatus())
+                                    || record.getStatus().equals(RunStatus.RERUNDONE.getStatus())))){//没有执行成功{
                     logger.info("job:{} depJob record:{} not done!",job.getJobId(),record==null?"null":record.getRecordId()+"");
                     allDone=false;
                     break;

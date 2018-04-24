@@ -65,6 +65,15 @@ public class ExecuteServiceTest extends BaseTest{
 
 
     @Test
+    public void testDep3(){
+        Long jobId=2L;
+        JobVo job = jobService.getJobVo(jobId);
+
+        boolean b = executeService.judgeDependentJobsAllDone(job, 4667394352218858L);
+        System.out.println(b);
+    }
+
+    @Test
     public void testDep2(){
         Long groupId=3L;
         Job dbJob= new Job();

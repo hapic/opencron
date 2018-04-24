@@ -361,10 +361,13 @@ public class RecordService {
      * 插入pending状态的执行状态
      * @param childJob
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Record insertPendingReocrd(Long actionId,JobVo childJob) {
         //先判断是否已经保存过了
         Record record = this.getRecord(actionId, childJob.getJobId());
-        if(record!=null && record.getStatus().equals(Opencron.RunStatus.PENDING.getStatus())){//如果可以查找，则表示已经保存过了
+        log.info("actionId:{} jobId:{} record:{}",actionId, childJob.getJobId(),record);
+//        if(record!=null && record.getStatus().equals(Opencron.RunStatus.PENDING.getStatus())){//如果可以查找，则表示已经保存过了
+        if(record!=null ){//如果可以查找，则表示已经保存过了
             log.info("job:{} record:{} has exits!",childJob.getJobName(),record.getRecordId());
             return record;
         }
@@ -377,6 +380,7 @@ public class RecordService {
             String code = DigestUtils.md5Hex(record.getStatus() + record.getJobId() + record.getActionId()+"");
             record.setUniqueCode(code);
             record = this.merge(record);
+            log.info("by actionId:{} jobId:{} insert into new reocrd:{}",actionId, childJob.getJobId(),record.getRecordId());
         } catch (Exception e) {
             DBException.business(e,"UK_UNIQUECODE");
             return this.getRecord(actionId, childJob.getJobId());
