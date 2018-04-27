@@ -60,7 +60,6 @@ public class DoPendingRunnable implements Runnable {
             while(CommonUtils.notEmpty(records)) {
                 log.info("all pending job record:{}",records.size());
 
-                CountDownLatch countDownLatch= new CountDownLatch(records.size());
                 for (final Record record : records) {
                     judgeMaxRunnint();
                     log.info("do pending job record:{} actionId:{}",record.getRecordId(),record.getActionId());
@@ -71,16 +70,9 @@ public class DoPendingRunnable implements Runnable {
                     final JobVo jobVo = jobService.getJobVoById(record.getJobId());
                     jobVo.setAgent(agentService.getAgent(jobVo.getAgentId()));
 
-                    jobExecuteServicePool.execute(new JobExecuteService(jobVo,record,countDownLatch,executeService));
-                }
-                try {
-                    //最多等待2分钟
-                    countDownLatch.await(2, TimeUnit.MINUTES);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    jobExecuteServicePool.execute(new JobExecuteService(jobVo,record,executeService));
                 }
 
-                
                 records =  recordService.loadPendingRecord(offSet,limit);
             }
             offSet=Integer.MAX_VALUE;

@@ -34,8 +34,9 @@ public class ConcurrencyControl {
      * @return
      */
     public int updateConcurrencyNum(Integer newNum){
-        maxRunning=newNum;
         int i = atomicInteger.addAndGet(newNum - maxRunning);
+
+        maxRunning=newNum;
         if(i<0){//如果更新后的值小于0则表示为往下降
             while (true){
                 int i1 = atomicInteger.incrementAndGet();

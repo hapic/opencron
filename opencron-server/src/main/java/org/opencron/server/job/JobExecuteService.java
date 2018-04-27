@@ -23,22 +23,17 @@ public class JobExecuteService implements Runnable {
     private JobVo jobVo;
     private Record record;
 
-    CountDownLatch countDownLatch;
 
-    public JobExecuteService(JobVo jobVo, Record record, CountDownLatch countDownLatch, ExecuteService executeService) {
+    public JobExecuteService(JobVo jobVo, Record record, ExecuteService executeService) {
         this.jobVo=jobVo;
         this.record=record;
-        this.countDownLatch=countDownLatch;
         this.executeService=executeService;
     }
 
 
     @Override
     public void run() {
-
         executeService.executeJob(jobVo, record.getActionId());
-
-        countDownLatch.countDown();
 
     }
 }
