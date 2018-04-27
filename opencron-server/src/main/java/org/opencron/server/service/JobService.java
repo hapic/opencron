@@ -545,8 +545,8 @@ public class JobService {
 
     private int updateJobFlowNum(Long jobId, int level) {
         String sql="UPDATE `t_job` tj " +
-                "SET tj.`flowNum`=? " +
-                "WHERE tj.`jobId`=? ";
+                "SET tj.`flowNum`=? ,tj.`lastChild`=IF(flowNum=0,FALSE,TRUE) " +
+                "WHERE tj.`jobId`=?";
         return queryDao.createSQLQuery(sql,level,jobId).executeUpdate();
     }
 

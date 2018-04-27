@@ -420,6 +420,9 @@ public class ExecuteService implements Job {
             } else {
                 record.setMessage(this.loggerError("execute failed(flow job):jobName:%s at ip:%s,port:%d,info:%s", job, e.getMessage(), e));
             }
+            if(record.getStatus().equals(RunStatus.DONE.getStatus())){
+                record.setStatus(RunStatus.DONE.getStatus());
+            }
             record.setSuccess(ResultStatus.FAILED.getStatus());//程序调用失败
             record.setReturnCode(StatusCode.ERROR_EXEC.getValue());
             record.setEndTime(new Date());
@@ -430,7 +433,7 @@ public class ExecuteService implements Job {
             //流程任务的重跑靠自身维护...
             if (!success) {
                 Record red = recordService.get(record.getRecordId());
-                if (job.getRedo() == 1 && job.getRunCount() > 0) {
+                if (job.getRedo() == 1 && job.getRunCount()!=null && job.getRunCount() > 0) {
                     int index = 0;
                     boolean flag;
                     do {

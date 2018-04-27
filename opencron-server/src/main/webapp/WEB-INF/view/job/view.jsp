@@ -1045,7 +1045,7 @@
                                 moduleshierarchy.push(edge)
                             }
 
-                            if(strJob.indexOf("-"+obj.jobId+"-")>0){
+                            if(strJob.indexOf("-"+obj.jobId+"-")>=0){
                                 return ;
                             }
                             strJob+=obj.jobId+"-";

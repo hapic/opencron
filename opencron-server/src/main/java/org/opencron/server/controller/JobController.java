@@ -203,6 +203,11 @@ public class JobController extends BaseController {
 
             jobVo.setCronType(Opencron.CronType.QUARTZ.getType());
             jobVo.setExecType(Opencron.ExecType.AUTO.getStatus());
+            jobVo.setRedo(0);
+            jobVo.setRunAs("root");
+            jobVo.setSuccessExit("0");
+            jobVo.setTimeout(0);
+            jobVo.setWarning(false);
 
             String jobName = commant.substring(commant.lastIndexOf("/")+1);
             jobVo.setJobName(jobName);
