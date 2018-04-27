@@ -229,6 +229,7 @@ public class JobController extends BaseController {
 
     @RequestMapping(value = "save.do",method= RequestMethod.POST)
     public String save(HttpSession session, Job job,String[] dependenceid, HttpServletRequest request) throws SchedulerException {
+
         job.setCommand(DigestUtils.passBase64(job.getCommand()));
         job.setDeleted(false);
         job.setPause(false);//未暂停
@@ -239,6 +240,9 @@ public class JobController extends BaseController {
         String groupParam="";
         if(job.getGroupId()!=null && job.getGroupId()>0){
             groupParam="&groupId="+job.getGroupId();
+        }
+        if(!this.checkName(job.getJobId(),job.getAgentId(),job.getJobName())){
+            return "redirect:/job/view.htm?csrf=" + OpencronTools.getCSRF(session)+groupParam;
         }
         if (job.getJobId() != null) {
             /**
@@ -518,6 +522,7 @@ public class JobController extends BaseController {
         job.setAgent(agentService.getAgent(job.getAgentId()));
         job.setRecordId(recordId);
         try {
+
             this.executeService.executeJob(job);
         } catch (Exception e) {
             e.printStackTrace();

@@ -60,7 +60,6 @@ function fillNoneDiagramData(div,modules) {
                     $G(go.TextBlock,{row : 0,column : 0, columnSpan : 3,alignment : go.Spot.Center},
                         {font : "bold 12pt sans-serif" },
                         { margin: 4},  // some room around the text
-                        // TextBlock.text is bound to Node.data.key
                         new go.Binding("text", "name"))
                 )
             ));

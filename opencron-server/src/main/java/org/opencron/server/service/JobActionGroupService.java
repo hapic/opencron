@@ -102,6 +102,10 @@ public class JobActionGroupService {
         if(job==null){
             throw  new org.opencron.common.exception.DBException("Job not found!");
         }
+        if(job.getGroupId()==null){
+            log.info("job:{} no groupId",job.getJobName());
+            return  CommonUtils.groupId();
+        }
 
         String sql="SELECT tjg.* FROM t_job_group tjg " +
                 "LEFT JOIN t_job tj " +

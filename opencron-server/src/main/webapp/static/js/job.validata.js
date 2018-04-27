@@ -28,8 +28,8 @@ function Validata() {
                 opencron.tipError("#jobName" + elemFix, "必填项,作业名称不能为空");
                 this.status = false;
             } else {
-                if (_jobName.length < 4 || _jobName.length > 17) {
-                    opencron.tipError("#jobName" + elemFix, "作业名称不能小于4个字符并且不能超过16个字符!");
+                if (_jobName.length < 4 || _jobName.length > 50) {
+                    opencron.tipError("#jobName" + elemFix, "作业名称不能小于4个字符并且不能超过50个字符!");
                     this.status = false;
                 } else {
                     var _this = this;

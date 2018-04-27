@@ -115,7 +115,7 @@ public class JobService {
                 "AND T.pause=0";
         List<JobVo> jobs = queryDao.sqlQuery(JobVo.class, sql, cronType.getType(), execType.getStatus());
         //查询更多的任务
-//        queryJobMore(jobs);
+        queryJobMore(jobs);
         return jobs;
     }
 
@@ -139,7 +139,7 @@ public class JobService {
         if (CommonUtils.notEmpty(jobs)) {
             for (JobVo job : jobs) {
                 job.setAgent(agentService.getAgent(job.getAgentId()));
-                queryChildren(job);//查询子任务
+//                queryChildren(job);//查询子任务
                 queryJobUser(job);//查询job的执行者
             }
         }
@@ -346,8 +346,10 @@ public class JobService {
         if (job != null) {
             //单一任务,直接执行删除
             String sql = "UPDATE T_JOB SET deleted=1 WHERE ";
-            if (job.getJobType().equals(JobType.SINGLETON.getCode())) {
-                sql += " jobId=" + jobId;
+            sql += " jobId=" + jobId;
+
+            /*if (job.getJobType().equals(JobType.SINGLETON.getCode())) {
+
             }
             if (job.getJobType().equals(JobType.FLOW.getCode())) {
                 if (job.getFlowNum() == 0) {
@@ -357,7 +359,7 @@ public class JobService {
                     //其中一个子流程任务,则删除单个
                     sql += " jobId=" + jobId;
                 }
-            }
+            }*/
             queryDao.createSQLQuery(sql).executeUpdate();
 
             int parentJobCount=this.jobDependenceService.breakParentShip(jobId);
@@ -528,12 +530,13 @@ public class JobService {
                 /**
                  * 如果已经是最后子节点 或者 不是流式任务，则修改
                  */
-                if( dependentJob.getLastChild() ==null
+                dependentJob.setLastChild(false);//前置任务不是最后一个子节点
+                /*if( dependentJob.getLastChild() ==null
                         || dependentJob.getLastChild()
                         || !dependentJob.getJobType().equals(JobType.FLOW.getCode())){
                     dependentJob.setJobType(JobType.FLOW.getCode());
-                    dependentJob.setLastChild(false);//前置任务不是最后一个子节点
-                }
+
+                }*/
                 this.merge(dependentJob);
             }
         }
@@ -620,18 +623,26 @@ public class JobService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void initRootPendingJob(JobVo job, Long actionId) {
-
+        if(job.getGroupId()==null){
+            logger.info("inset action:{} no group job:{}",actionId,job.getJobName());
+            this.recordService.insertPendingReocrd(actionId,job);
+            return;
+        }
         //初始化Task记录
         DBOperate dbOperate = this.jobActionGroupService.updateActionGroup(job, actionId);
         if(dbOperate==DBOperate.INSERT){//只有成功插入才可以初始化这些pending的Job
             logger.info("current job:{} actionId:{} will insert into pending record ! ",job.getJobName(),actionId);
 
-            List<JobVo> rootJobList=this.loadRootJobByGroupId(job.getGroupId());
-            for(JobVo rootJob:rootJobList){
-                logger.info("insert job:{},actionId:{} status:pending ",rootJob.getJobName(),actionId);
-
-                this.recordService.insertPendingReocrd(actionId,rootJob);
+            if(job.getGroupId()!=null){
+                List<JobVo> rootJobList=this.loadRootJobByGroupId(job.getGroupId());
+                for(JobVo rootJob:rootJobList){
+                    logger.info("insert job:{},actionId:{} status:pending ",rootJob.getJobName(),actionId);
+                    this.recordService.insertPendingReocrd(actionId,rootJob);
+                }
+            }else{
+                logger.info("action:{} job:{} no groupId ",actionId,job.getJobName());
             }
+
         }else{
             logger.info("current job:{} actionId:{} insert fail ! ",job.getJobName(),actionId);
         }
@@ -644,7 +655,7 @@ public class JobService {
      */
     public List<JobVo> loadRootJobByGroupId(Long groupId) {
         String sql="SELECT * FROM `t_job` tj " +
-                "WHERE tj.`deleted`=0 AND tj.`groupId`=? and tj.flowNum=0";
+                "WHERE tj.`deleted`=0 and  tj.`pause`=0 AND tj.`groupId`=? and tj.flowNum=0";
         return this.queryDao.sqlQuery(JobVo.class,sql,groupId);
     }
 

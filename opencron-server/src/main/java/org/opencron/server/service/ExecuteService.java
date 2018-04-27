@@ -127,11 +127,11 @@ public class ExecuteService implements Job {
             if(actionId==null){
                 //根据Job 获取当前对应的GroupId
                 actionId = jobActionGroupService.acquire(job);
-                logger.info("load groupId:{} by job:{}",actionId,job.getJobName());
+                logger.info("load actionId:{} by job:{}",actionId,job.getJobName());
             }
 
             if(job.getFlowNum()==0 && !job.getExecType().equals(Opencron.ExecType.OPERATOR.getStatus())){//如果是根节点,并且不是手动执行
-                Lock lock = CommonLock.acquireLock(actionId.toString());
+                Lock lock = CommonLock.acquireLock("action:"+actionId.toString());
                 lock.lock();
                     logger.info("save root action group by jobId:{}",job.getJobName());
                     this.jobService.initRootPendingJob(job,actionId);
@@ -463,6 +463,10 @@ public class ExecuteService implements Job {
         if (!job.getLastChild()) {//如果不是最后一个节点则初始化后置任务的数据
             List<JobVo> childeJobs=jobDependenceService.childsNodeJob(job.getJobId());
             logger.info("action:{} job:{} childeSize:{}",actionId,job.getJobName(),childeJobs.size());
+            if(CommonUtils.isEmpty(childeJobs)){
+                logger.info("action:{} job:{} no child",actionId,job.getJobName());
+                return;
+            }
             for(JobVo childJob:childeJobs){
                 try {
                     Record pendingRecord = recordService.insertPendingReocrd(actionId,childJob);//加载下级任务的执行状态
@@ -473,6 +477,8 @@ public class ExecuteService implements Job {
                     continue;
                 }
             }
+        }else{
+            logger.info("action:{} job:{} is last child",actionId,job.getJobName());
         }
     }
 

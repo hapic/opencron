@@ -7,6 +7,8 @@ package org.opencron.server.until;
  * @version V1.0
  */
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,10 +16,12 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @Descriptions:
  */
+@Slf4j
 public class CommonLock {
     private volatile   static ConcurrentHashMap<String,Lock> hashMap= new ConcurrentHashMap();
 
     public static Lock acquireLock(String key){
+        log.info("try lock {}",key);
         if(hashMap.containsKey(key)){
             return hashMap.get(key);
         }else{

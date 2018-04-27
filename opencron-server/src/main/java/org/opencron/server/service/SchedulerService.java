@@ -24,6 +24,7 @@ package org.opencron.server.service;
 
 import org.opencron.common.job.Opencron;
 import org.opencron.server.job.OpencronCollector;
+import org.opencron.server.until.CommonLock;
 import org.opencron.server.vo.JobVo;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Service;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -73,21 +75,35 @@ public final class SchedulerService {
     }
 
     public void put(JobVo job, Job jobBean) throws SchedulerException {
-        //创建quartz的执行表达式
-        TriggerKey triggerKey = TriggerKey.triggerKey(job.getJobId().toString());
-        CronTrigger cronTrigger = newTrigger().withIdentity(triggerKey).withSchedule(cronSchedule(job.getCronExp())).build();
+        Lock lock = CommonLock.acquireLock("jobId:"+job.getJobId());
+        lock.lock();
 
-        //when exists then delete..
-        if (exists(job.getJobId())) {
-            this.remove(job.getJobId());
+        try {
+            logger.info("put job:{} to quartz",job.getJobName());
+            //创建quartz的执行表达式
+            TriggerKey triggerKey = TriggerKey.triggerKey(job.getJobId().toString());
+            CronTrigger cronTrigger = newTrigger().withIdentity(triggerKey).withSchedule(cronSchedule(job.getCronExp())).build();
+
+            //when exists then delete..
+            if (exists(job.getJobId())) {
+                this.remove(job.getJobId());
+            }
+            //add new job 。。。
+            //创建执行任务的实体
+            JobDetail jobDetail = JobBuilder.newJob(jobBean.getClass()).withIdentity(JobKey.jobKey(job.getJobId().toString())).build();
+            jobDetail.getJobDataMap().put(job.getJobId().toString(), job);
+            jobDetail.getJobDataMap().put("jobBean", jobBean);
+
+
+            Date date = quartzScheduler.scheduleJob(jobDetail, cronTrigger);
+            logger.info("opencron: add success,cronTrigger:{}", cronTrigger, date);
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }finally {
+            if(lock!=null){
+                lock.unlock();
+            }
         }
-        //add new job 。。。
-        //创建执行任务的实体
-        JobDetail jobDetail = JobBuilder.newJob(jobBean.getClass()).withIdentity(JobKey.jobKey(job.getJobId().toString())).build();
-        jobDetail.getJobDataMap().put(job.getJobId().toString(), job);
-        jobDetail.getJobDataMap().put("jobBean", jobBean);
-        Date date = quartzScheduler.scheduleJob(jobDetail, cronTrigger);
-        logger.info("opencron: add success,cronTrigger:{}", cronTrigger, date);
     }
 
     public void remove(Serializable jobId) throws SchedulerException {

@@ -65,6 +65,9 @@ public class JobGroupService {
         int i = this.queryDao.createSQLQuery(updateSql, actionId, id, version).executeUpdate();
         log.info("update jobGroup:{} by :{} result:{}",id,actionId,i);
         JobGroup jobGroup =null;
+        /*if(i<0){
+            jobGroup = this.queryDao.get(JobGroup.class, id);
+        }*/
         do{
             jobGroup = this.queryDao.get(JobGroup.class, id);
         }while (jobGroup.getActionId()==null);
