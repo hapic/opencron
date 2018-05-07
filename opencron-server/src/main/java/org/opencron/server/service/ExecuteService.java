@@ -369,6 +369,7 @@ public class ExecuteService implements Job {
         }
         if(job.getPause() && job.getExecType().equals(Opencron.ExecType.AUTO.getStatus())){//如果当前任务已经暂停了，则修改这个记录为暂停
             record.setStatus(Opencron.RunStatus.STOPED.getStatus());
+            record.setEndTime(new Date());
             recordService.merge(record);
             logger.info("job:{} pause,record:{} pause",job.getJobName(),record.getRecordId());
             return false;
@@ -379,8 +380,10 @@ public class ExecuteService implements Job {
             logger.info("record:{}  update {} by other thread already!",record.getRecordId(),RunStatus.RUNNING.getStatus());
             return false;
         }
+
         //获取最新记录
         record =recordService.getRecord(actionId,job.getJobId());
+
         boolean success = true;
 
         try {
@@ -388,6 +391,9 @@ public class ExecuteService implements Job {
 
             //执行前先检测一次通信是否正常
             checkPing(job, record);
+
+            //更改开始时间
+            this.recordService.updateRecordStartTime(record.getRecordId());
 
             Response result = responseToRecord(job, record);//执行远程端命令
 

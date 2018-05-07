@@ -201,9 +201,14 @@ public class RecordService {
 
     public Record merge(Record record) {
         record = (Record) queryDao.merge(record);
-        String sql = "UPDATE T_RECORD SET startTime=NOW() WHERE recordId=?";
-        queryDao.createSQLQuery(sql,record.getRecordId()).executeUpdate();
+//        String sql = "UPDATE T_RECORD SET startTime=NOW() WHERE recordId=?";
+//        queryDao.createSQLQuery(sql,record.getRecordId()).executeUpdate();
         return record;
+    }
+
+    public int updateRecordStartTime(Long recordId){
+        String sql = "UPDATE T_RECORD SET startTime=NOW() WHERE recordId=?";
+           return queryDao.createSQLQuery(sql,recordId).executeUpdate();
     }
 
     public Record get(Long recordId) {
