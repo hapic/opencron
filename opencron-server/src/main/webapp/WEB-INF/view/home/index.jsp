@@ -120,6 +120,14 @@
                 opencronChart.query();
             });
 
+            $("#queryData").click(function(){
+                var startDate=$("#startTime2").val();
+                var endTime=$("#endTime2").val();
+                window.location.href="${contextPath}/dashboard.htm?csrf=${csrf}&startTime="+startDate+"&endTime="+endTime;
+
+
+            });
+
             $("#agentId").change(
                 function () {
                     //清理上一个轮询...
@@ -229,8 +237,20 @@
     </ol>
 
     <h4 class="page-title" ><i class="fa fa-tachometer" aria-hidden="true" style="font-size: 30px;"></i>&nbsp;作业报告</h4>
+    <div id="timeopter2">
+        <div style="float: right;margin-bottom: 0px;margin-top: -10px;margin-right:10px;">
+            <label for="startTime" class="label-self">时间&nbsp;: </label>
+            <input type="text" style="border-radius: 1px;width: 90px" id="startTime2" name="startTime" value="${startDate}" onfocus="WdatePicker({onpicked:function(){},dateFmt:'yyyy-MM-dd'})" class="Wdate"/>
+            <label for="endTime" class="label-self">&nbsp;至&nbsp;</label>
+            <input type="text" style="border-radius: 1px;width: 90px" id="endTime2" name="endTime" value="${endDate}" onfocus="WdatePicker({onpicked:function(){},dateFmt:'yyyy-MM-dd'})" class="Wdate"/>&nbsp;
+            <button id="queryData" class="btn btn-default btn-sm" style="vertical-align:top;height: 25px;" type="button" onclick="queryData()">
+                <i class="glyphicon glyphicon-search"></i>查询
+            </button>
+        </div>
+    </div>
     <!-- Quick Stats -->
     <div class="block-area" id="overview" style="margin-top: 0px">
+
         <!-- cards -->
         <div class="row cards">
             <div class="card-container col-lg-3 col-sm-6 col-sm-12">
@@ -294,7 +314,7 @@
                             <span class="pull-left"><i style="font-size: 60px;margin-top: 0px;" class="fa fa-thumbs-o-up" aria-hidden="true"></i></span>
                             <div class="media-body">
                                 <small>成功作业</small>
-                                <h2 data-animation-duration="1500" data-value="0" class="media-heading animate-number">${successRecord}</h2>
+                                <h2 data-animation-duration="1500" data-value="0" id="successRecord" class="media-heading animate-number">${successRecord}</h2>
                             </div>
                         </div>
 
@@ -320,7 +340,7 @@
                             <span class="pull-left"><i style="font-size: 60px;margin-top: -3px;" class="fa fa-thumbs-o-down" aria-hidden="true"></i></span>
                             <div class="media-body">
                                 <small>失败作业</small>
-                                <h2 data-animation-duration="1500" data-value="0" class="media-heading animate-number">${failedRecord}</h2>
+                                <h2 data-animation-duration="1500" data-value="0" id="failedRecord" class="media-heading animate-number">${failedRecord}</h2>
                             </div>
                         </div>
 

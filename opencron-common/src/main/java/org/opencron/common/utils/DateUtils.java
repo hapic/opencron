@@ -491,10 +491,60 @@ public abstract class DateUtils {
         return statTime;
     }
 
+    public static String getCurrDay(String format) {
+        Calendar cal = Calendar.getInstance();
+        String statTime = new SimpleDateFormat(format).format(cal.getTime());
+        return statTime;
+    }
+
+    public static Date formatDate(String dayTime) {
+        Date parse = null;
+        try {
+
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format_day);//
+            Calendar cal = Calendar.getInstance();
+
+
+            parse = simpleDateFormat.parse(dayTime);
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return parse;
+    }
+
     //获取今天之前的n天
     public static String getCurrDayPrevDay(int i) {
         return getCurrDayPrevDay(format_day, i);
     }
+
+    /**
+     * 获取当天开始时间
+     * @return
+     */
+    public static String getBeginTimeCurDayTime(){
+        Calendar cal = new GregorianCalendar();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return fullDateFormat.format(cal.getTime());
+    }
+
+    public static String getBeginTimeCurDay(){
+        Calendar cal = new GregorianCalendar();
+        return simpleDateFormat.format(cal.getTime());
+    }
+
+    /**
+     * 获取当天结束时间
+     * @return
+     */
+    public static String getEndTimeCurDay(){
+        Calendar cal = new GregorianCalendar();
+        return simpleDateFormat.format(cal.getTime());
+    }
+
 
     //获取今天之前的n天
     public static String getCurrDayNextDay(int i) {
@@ -577,11 +627,11 @@ public abstract class DateUtils {
 
 
     public static void main(String[] args) {
-//        System.out.println(getPrevWeekSunday(-7));
 
-        for (int i = 0; i < 20; i++) {
-            System.out.println(getPrevWeekSunday(-7 * (i + 1)) + "<<--->>" + getPrevWeekSunday(-7 * i));
-        }
+        String startTime = DateUtils.getCurrDayPrevDay(0);
+        Date date = formatDate(startTime);
+        System.out.println(date);
+
 
     }
 

@@ -300,17 +300,22 @@ public class RecordService {
         return queryDao.sqlQuery(Record.class, sql, recordId);
     }
 
-    public Long getRecords(HttpSession session, int status, Opencron.ExecType execType) {
+    public Long getRecords(HttpSession session, int status, Opencron.ExecType execType,String startDate,String endDate) {
         String sql;
         if (status == 1) {
-            sql = "SELECT COUNT(1) FROM T_RECORD WHERE success=? AND execType=? AND STATUS IN (?,?,?) AND (FLOWNUM IS NULL OR flowNum=1)";
+            sql = "SELECT COUNT(1) FROM T_RECORD WHERE success=? AND execType=? AND STATUS IN (?,?,?)  ";
         } else {
-            sql = "SELECT COUNT(1) FROM T_RECORD WHERE success<>? AND execType=? AND STATUS IN (?,?,?) AND (FLOWNUM IS NULL OR flowNum=1)";
+            sql = "SELECT COUNT(1) FROM T_RECORD WHERE success<>? AND execType=? AND STATUS IN (?,?,?) ";
         }
         if (!OpencronTools.isPermission(session)) {
             User user = OpencronTools.getUser(session);
             sql += " AND userId = " + user.getUserId() + " AND agentid IN (" + user.getAgentIds() + ")";
         }
+        if (notEmpty(startDate, endDate)) {
+            sql+=" AND insertDate BETWEEN '"+startDate+"' AND  DATE_ADD('"+endDate+"',INTERVAL 1 DAY)";
+        }
+
+
         return queryDao.getCountBySql(sql, 1, execType.getStatus(), Opencron.RunStatus.STOPED.getStatus(),Opencron.RunStatus.DONE.getStatus(),Opencron.RunStatus.RERUNDONE.getStatus());
     }
 

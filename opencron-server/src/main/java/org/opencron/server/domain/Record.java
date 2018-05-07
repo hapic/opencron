@@ -83,6 +83,9 @@ public class Record implements Serializable {
     //插入时防止重复的多余字段
     private String uniqueCode;
 
+    //插入时间
+    private Date insertDate;
+
     public Record() {
     }
 
@@ -100,6 +103,7 @@ public class Record implements Serializable {
         this.setStatus(Opencron.RunStatus.RUNNING.getStatus());//任务还未完成
         this.setFlowNum(jobVo.getFlowNum());
         this.setPid(CommonUtils.uuid());
+        this.setInsertDate(new Date());//插入数据库的时间
     }
 
 
@@ -278,6 +282,15 @@ public class Record implements Serializable {
 
     public void setActionId(Long actionId) {
         this.actionId = actionId;
+    }
+
+
+    public Date getInsertDate() {
+        return insertDate;
+    }
+
+    public void setInsertDate(Date insertDate) {
+        this.insertDate = insertDate;
     }
 
     @Override

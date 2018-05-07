@@ -89,8 +89,11 @@ public class DashboardController extends BaseController {
         return "/home/login";
     }
 
+
     @RequestMapping("dashboard.htm")
-    public String dashboard(HttpSession session, Model model) {
+    public String dashboard(HttpSession session, Model model,String startTime, String endTime) {
+
+
         /**
          * agent...
          */
@@ -116,8 +119,16 @@ public class DashboardController extends BaseController {
         /**
          * 成功作业,自动执行
          */
-        Long successAutoRecord = recordService.getRecords(session, 1, Opencron.ExecType.AUTO);
-        Long successOperRecord = recordService.getRecords(session, 1, Opencron.ExecType.OPERATOR);
+        if (isEmpty(startTime)) {//默认当天的最早时间
+            startTime = DateUtils.getBeginTimeCurDay();
+        }
+
+        if (isEmpty(endTime)) {//默认当天的最晚时间
+            endTime = DateUtils.getEndTimeCurDay();
+        }
+
+        Long successAutoRecord = recordService.getRecords(session, 1, Opencron.ExecType.AUTO,startTime,endTime);
+        Long successOperRecord = recordService.getRecords(session, 1, Opencron.ExecType.OPERATOR,startTime,endTime);
 
         model.addAttribute("successAutoRecord", successAutoRecord);
         model.addAttribute("successOperRecord", successOperRecord);
@@ -126,11 +137,15 @@ public class DashboardController extends BaseController {
         /**
          * 失败作业
          */
-        Long failedAutoRecord = recordService.getRecords(session, 0, Opencron.ExecType.AUTO);
-        Long failedOperRecord = recordService.getRecords(session, 0, Opencron.ExecType.OPERATOR);
+        Long failedAutoRecord = recordService.getRecords(session, 0, Opencron.ExecType.AUTO,startTime,endTime);
+        Long failedOperRecord = recordService.getRecords(session, 0, Opencron.ExecType.OPERATOR,startTime,endTime);
         model.addAttribute("failedAutoRecord", failedAutoRecord);
         model.addAttribute("failedOperRecord", failedOperRecord);
         model.addAttribute("failedRecord", failedAutoRecord + failedOperRecord);
+
+        model.addAttribute("startDate", startTime);
+        model.addAttribute("endDate", endTime);
+
 
         model.addAttribute("startTime", DateUtils.getCurrDayPrevDay(7));
         model.addAttribute("endTime", DateUtils.formatSimpleDate(new Date()));
