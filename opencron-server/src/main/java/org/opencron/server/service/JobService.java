@@ -545,8 +545,11 @@ public class JobService {
 
     private int updateJobFlowNum(Long jobId, int level) {
         String sql="UPDATE `t_job` tj " +
-                "SET tj.`flowNum`=? ,tj.`lastChild`=IF(flowNum=0,FALSE,TRUE) " +
-                "WHERE tj.`jobId`=?";
+                "SET tj.`flowNum`=? " ;
+                if(level==0){
+                    sql+= " ,tj.`lastChild`=IF(flowNum=0,FALSE,TRUE)";
+                }
+        sql+="WHERE tj.`jobId`=?";
         return queryDao.createSQLQuery(sql,level,jobId).executeUpdate();
     }
 
@@ -574,6 +577,12 @@ public class JobService {
                 logger.info("jobId:{},depJobId:{} operate:{}",jobId,dependentJob,dbOperate);
             }
             refreshJobFowNum(job);
+        }
+
+        List<Job> depJobs = jobDependenceService.dependentJob2(job.getJobId());
+        if(CommonUtils.isEmpty(depJobs)){
+            job.setLastChild(true);
+            logger.info("job:{} set last child.",job.getJobName());
         }
 
         this.merge(job);

@@ -73,7 +73,7 @@ public class ConfigController extends BaseController {
         cfg.setSmtpHost(config.getSmtpHost());
         cfg.setSpaceTime(config.getSpaceTime());
         cfg.setSmtpPort(config.getSmtpPort());
-        if(config.getMaxRunning()>1){
+        if(config.getMaxRunning()>=1){
             cfg.setMaxRunning(config.getMaxRunning());
         }
         configService.update(cfg);

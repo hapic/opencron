@@ -157,7 +157,7 @@ public class JobDependenceService {
     private int updateDepenceStatus(Long jobId, Long depJobId, Opencron.DependenceStatus status) {
         String update="UPDATE `t_job_dependence` tjd " +
                 "SET tjd.`status`=? " +
-                "WHERE tjd.`jobId`=? AND tjd.`dependenceJobId`=?";
+                "WHERE tjd.`jobId`=? AND tjd.`dependenceJobId`=? and tjd.`status`=1";
 
         return this.queryDao.createSQLQuery(update,status.getValue(),jobId,depJobId).executeUpdate();
     }
@@ -165,15 +165,15 @@ public class JobDependenceService {
 
     /**
      * 加载当前组的依赖关系
-     * @param jobId
+     * @param groupId
      * @return
      */
-    public List<JobDependence> loadDependence(Long jobId) {
+    public List<JobDependence> loadDependence(Long groupId) {
 
         String sql="SELECT * FROM `t_job_dependence` tjd " +
                 "WHERE tjd.groupId=? AND tjd.`status`=?";
 
-        return this.queryDao.sqlQuery(JobDependence.class,sql,jobId,Opencron.DependenceStatus.NORMAL.getValue());
+        return this.queryDao.sqlQuery(JobDependence.class,sql,groupId,Opencron.DependenceStatus.NORMAL.getValue());
     }
 
     /**

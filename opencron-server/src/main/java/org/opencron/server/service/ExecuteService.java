@@ -463,7 +463,9 @@ public class ExecuteService implements Job {
      * @param job
      */
     public void initChildJob(Long actionId,JobVo job) {
-        if (!job.getLastChild()) {//如果不是最后一个节点则初始化后置任务的数据
+
+//        if (!job.getLastChild()) {//如果不是最后一个节点则初始化后置任务的数据
+
             List<JobVo> childeJobs=jobDependenceService.childsNodeJob(job.getJobId());
             logger.info("action:{} job:{} childeSize:{}",actionId,job.getJobName(),childeJobs.size());
             if(CommonUtils.isEmpty(childeJobs)){
@@ -480,9 +482,9 @@ public class ExecuteService implements Job {
                     continue;
                 }
             }
-        }else{
-            logger.info("action:{} job:{} is last child",actionId,job.getJobName());
-        }
+//        }else{
+//            logger.info("action:{} job:{} is last child",actionId,job.getJobName());
+//        }
     }
 
 
