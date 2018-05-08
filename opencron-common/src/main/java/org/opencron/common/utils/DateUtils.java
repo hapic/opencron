@@ -433,6 +433,17 @@ public abstract class DateUtils {
         return null;
     }
 
+    /**
+     * 获取当前时间的前date分前的世界
+     * @param date
+     * @return
+     */
+    public static String beforeTime(int date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE,-Math.abs(date));
+        return parseStringFromDate(calendar.getTime(), format);
+    }
+
     //获取指定日期之前的n天
     public static String getPrevDay(Date date, String format, int i) {
         Calendar calendar = Calendar.getInstance();
@@ -628,9 +639,8 @@ public abstract class DateUtils {
 
     public static void main(String[] args) {
 
-        String startTime = DateUtils.getCurrDayPrevDay(0);
-        Date date = formatDate(startTime);
-        System.out.println(date);
+        String s = beforeTime(10);
+        System.out.println(s);
 
 
     }
@@ -675,6 +685,7 @@ public abstract class DateUtils {
         }
         return 0;
     }
+
 
 }
 

@@ -73,6 +73,17 @@ public class CronTag {
     public static String escapeHtml(String html){
         return StringUtils.htmlEncode(html);
     }
+    public static String splitStr(String name){
+        if(StringUtils.isNullString(name)){
+            return "";
+        }
+        String s = StringUtils.htmlEncode(name);
+        if(s.length()<20){
+            return s;
+        }else{
+            return s.substring(0,20);
+        }
+    }
 
 
     public static String toBase64(String text){

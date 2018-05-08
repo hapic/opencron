@@ -69,6 +69,8 @@ public class Job implements Serializable {
 
     private String mobiles;
 
+    private Integer weight=0;//任务的权重
+
 
     @Lob
     @Column(columnDefinition="TEXT")
@@ -84,6 +86,14 @@ public class Job implements Serializable {
     //所属组
     private Long groupId;
 
+
+    public Integer getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Integer weight) {
+        this.weight = weight;
+    }
 
     public Long getGroupId() {
         return groupId;

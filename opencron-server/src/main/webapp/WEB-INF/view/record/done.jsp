@@ -289,7 +289,7 @@
         <table class="table tile textured">
             <thead>
             <tr>
-                <th>执行编号</th>
+                <th>所属组</th>
                 <th>任务名称</th>
                 <th>执行器</th>
                 <th>执行命令</th>
@@ -307,10 +307,10 @@
                 <tbody class="tbody_${empty r.groupId ? r.recordId : r.groupId} tbody_${index.index}" style="border-top: none">
 
                     <tr class="tr-flow_${empty r.groupId ? "" : r.groupId}">
-                        <td>${r.actionId}</td>
+                        <td>${r.groupId}</td>
                         <td id="row_${r.groupId}" rowspan="1">
                             <center>
-                                    ${r.jobName}
+                                    ${cron:substr(r.jobName, 0,20 ,"..." )}
                                 <c:if test="${r.redoCount ne 0}">
                                     <c:forEach var="rc" items="${r.childRecord}" varStatus="index">
                                         <div class="redoIndex_${r.recordId} groupIndex_${r.groupId}" style="display: none">

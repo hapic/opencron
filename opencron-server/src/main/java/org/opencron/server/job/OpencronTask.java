@@ -24,9 +24,14 @@ package org.opencron.server.job;
 
 import org.opencron.common.job.Opencron;
 import org.opencron.common.utils.CommonUtils;
+import org.opencron.common.utils.DateUtils;
+import org.opencron.server.alarm.AlarmNoticeFacory;
+import org.opencron.server.alarm.AlarmTypes;
+import org.opencron.server.alarm.MsgTemplet;
 import org.opencron.server.domain.Record;
 import org.opencron.server.service.*;
 import org.opencron.server.vo.JobVo;
+import org.opencron.server.vo.RecordVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -34,7 +39,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.List;
+
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 
 @Component
@@ -77,13 +85,12 @@ public class OpencronTask implements InitializingBean {
         schedulerService.initQuartz(executeService);
         schedulerService.initCrontab();
 
-
     }
 
     /**
      * 重新执行任务
      */
-    @Scheduled(cron = "0/5 * * * * ?")
+//    @Scheduled(cron = "0/5 * * * * ?")
     public void reExecuteJob() {
         logger.info("[opencron] reExecuteIob running...");
         final List<Record> records = recordService.getReExecuteRecord();
@@ -105,6 +112,32 @@ public class OpencronTask implements InitializingBean {
                 }
             }).start();
         }
+    }
+
+    /**
+     * 任务超时未完成告警
+     */
+    @Scheduled(cron = "0/5 * * * * ?")
+    public void unfinishedAlarm() {
+            //加载超时(30m)未完成的
+        String beforeTime= DateUtils.beforeTime(3*60);
+        List<RecordVo> records =recordService.loadUnfinishedRecord(beforeTime);
+        if (CommonUtils.notEmpty(records)) {
+            for(RecordVo record:records){
+                String jobName = record.getJobName();
+                Date startTime = record.getStartTime();
+                String timeOutUnfinishedMsg =
+                        MsgTemplet.getTimeOutUnfinishedMsg(jobName, DateUtils.formatFullDate(startTime));
+
+                AlarmNoticeFacory.sendMsg(null,timeOutUnfinishedMsg, AlarmTypes.DINGDING);
+
+            }
+
+
+        }
+
+
+
     }
 
     private void clearCache() {

@@ -24,12 +24,9 @@ package org.opencron.server.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.hibernate.SQLQuery;
 import org.opencron.common.job.Opencron;
-import org.opencron.common.utils.CommonUtils;
 import org.opencron.server.DBException;
 import org.opencron.server.dao.QueryDao;
-import org.opencron.server.domain.JobActionGroup;
 import org.opencron.server.domain.Record;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.domain.User;
@@ -43,7 +40,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
-import java.util.Date;
 import java.util.List;
 
 import static org.opencron.common.utils.CommonUtils.notEmpty;
@@ -406,7 +402,8 @@ public class RecordService {
         String sql="SELECT R.*,D.ip,D.`name` AS agentName,D.password FROM T_RECORD AS R  " +
                 "INNER JOIN T_AGENT AS D  " +
                 "ON R.agentId = D.agentId  " +
-                "WHERE R.status=7 AND recordId<? order by R.recordId desc,R.flowNum DESC LIMIT ?";
+                "WHERE R.status=7 AND recordId<? " +
+                "ORDER BY R.`weight` DESC, R.recordId DESC,R.flowNum DESC LIMIT ?";
         return this.queryDao.sqlQuery(Record.class,sql,offSet,limit);
     }
 
@@ -449,5 +446,20 @@ public class RecordService {
                 "WHERE tr.`status`=? AND tr.`jobId`=?";
         return this.queryDao.sqlQuery(Record.class,sql,Opencron.RunStatus.PENDING.getStatus(),jobId);
 
+    }
+
+
+    /**
+     *
+     * @param beforeTime
+     * @return
+     */
+    public List<RecordVo> loadUnfinishedRecord(String beforeTime) {
+        String sql="SELECT tj.`jobName`,tr.`startTime` " +
+                "FROM `t_record` tr,`t_job` tj " +
+                "WHERE tr.`status` IN(0,4) " +
+                "AND tr.`jobId`=tj.`jobId` " +
+                "AND tr.`startTime`<?";
+        return this.queryDao.sqlQuery(RecordVo.class,sql,beforeTime);
     }
 }

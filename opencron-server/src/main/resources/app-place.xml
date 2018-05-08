@@ -1,9 +1,16 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd
-           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+            http://www.springframework.org/schema/task
+            http://www.springframework.org/schema/task/spring-task-4.1.xsd
+            http://www.springframework.org/schema/util
+            http://www.springframework.org/schema/util/spring-util.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd"
        default-lazy-init="true">
 
     <description>Spring公共配置文件</description>
@@ -24,6 +31,8 @@
 
     <context:annotation-config/>
 
+
+
     <context:component-scan base-package="org.opencron.server" scoped-proxy="targetClass"/>
 
     <bean class="org.opencron.server.job.OpencronTask" lazy-init="false"/>
@@ -32,5 +41,24 @@
 
     <import resource="app-datasource.xml"/>
     <!--<import resource="app-websocket.xml"/>-->
+
+
+    <!-- S 配置定时任务-->
+    <task:executor id="executor" pool-size="5" />
+    <!--配置线程池-->
+    <task:scheduler id="scheduler" pool-size="10" />
+    <task:annotation-driven executor="executor" scheduler="scheduler" />
+    <!--E 配置定时任务-->
+
+    <bean class="org.opencron.server.alarm.AlarmNoticeFacory" lazy-init="false" >
+        <property name="sendNoticeMap" ref="SendNoticeMap"/>
+    </bean>
+
+
+    <!--封装sendNotice的实现类-->
+    <util:map id="SendNoticeMap">
+        <!--<entry key="DINGDING" value-ref="ddSendNotice"/>-->
+        <!--<entry key="SMS" value-ref="smsSendNotice"/>-->
+    </util:map>
 
 </beans>

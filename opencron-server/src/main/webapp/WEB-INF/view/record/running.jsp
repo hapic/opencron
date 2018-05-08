@@ -189,7 +189,7 @@
         <table class="table tile textured">
             <thead>
             <tr>
-                <th>执行编号</th>
+                <th>所属组</th>
                 <th>作业名称</th>
                 <th>执行器</th>
                 <th>运行状态</th>
@@ -206,10 +206,14 @@
 
             <c:forEach var="r" items="${pageBean.result}" varStatus="index">
                 <tr>
-                    <td>${r.actionId}</td>
+                    <td>${r.groupId}</td>
                     <td>
                         <c:if test="${empty r.jobName}">batchJob</c:if>
-                        <c:if test="${!empty r.jobName}"><a href="${contextPath}/job/detail/${r.jobId}.htm?csrf=${csrf}">${r.jobName}</a></c:if>
+                        <c:if test="${!empty r.jobName}">
+                            <a href="${contextPath}/job/detail/${r.jobId}.htm?csrf=${csrf}">
+                                    ${cron:substr(r.jobName, 0,20 ,"..." )}
+                            </a>
+                        </c:if>
                     </td>
                     <td><a href="${contextPath}/agent/detail/${r.agentId}.htm?csrf=${csrf}">${r.agentName}</a></td>
                     <td>
@@ -235,8 +239,17 @@
                         <div class="opencron_command">${cron:escapeHtml(r.command)}</div>
                     </td>
 
-                    <td><fmt:formatDate value="${r.startTime}" pattern="yyyy-MM-dd HH:mm:ss"/></td>
-                    <td>${cron:diffdate(r.startTime,r.endTime)}</td>
+                    <td>
+                        <c:if test="${r.status eq 0}">
+                            <fmt:formatDate value="${r.startTime}" pattern="yyyy-MM-dd HH:mm:ss"/>
+                        </c:if>
+                    </td>
+                    <td>
+                        <c:if test="${r.status eq 0}">
+                            ${cron:diffdate(r.startTime,r.endTime)}
+                        </c:if>
+                    </td>
+
                     <td>
                         <c:if test="${r.jobType eq 1}">流程作业</c:if>
                         <c:if test="${r.jobType eq 0}">单一作业</c:if>

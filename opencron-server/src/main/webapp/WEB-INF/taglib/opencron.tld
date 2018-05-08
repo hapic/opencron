@@ -75,6 +75,12 @@
     </function>
 
     <function>
+        <name>splitStr</name>
+        <function-class>org.opencron.server.tag.CronTag</function-class>
+        <function-signature>java.lang.String splitStr(java.lang.String)</function-signature>
+    </function>
+
+    <function>
         <name>toBase64</name>
         <function-class>org.opencron.server.tag.CronTag</function-class>
         <function-signature>java.lang.String toBase64(java.lang.String)</function-signature>

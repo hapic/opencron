@@ -107,6 +107,16 @@ public class JobVo implements Serializable {
 
     private Long actionId;
 
+    private Integer weight=0;
+
+    public Integer getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Integer weight) {
+        this.weight = weight;
+    }
+
     public Long getActionId() {
         return actionId;
     }
