@@ -156,7 +156,25 @@
                     </div>
                 </div><br>
 
-
+                <div class="form-group">
+                    <label for="jobName" class="col-lab control-label wid150">
+                        <i class="glyphicon glyphicon-tasks"></i>&nbsp;&nbsp;权重&nbsp;&nbsp;<b>*&nbsp;</b></label>
+                    <div class="col-md-10">
+                        <select class="multiselect" title="jobGroupList" id="weight" name="weight">
+                            <c:set var="weigthSet" value="false"/>
+                            <c:forEach var="i" begin="0" end="5" step="1">
+                                <c:if test="${weight==i}">
+                                    <option value="${i}" selected>${i}</option>
+                                    <c:set var="weigthSet" value="true"/>
+                                </c:if>
+                                <c:if test="${ weigthSet==false}">
+                                    <option value="${i}">${i}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+                <br>
 
                 <div class="form-group">
                     <label for="agentId" class="col-lab control-label wid150"><i class="glyphicon glyphicon-leaf"></i>&nbsp;&nbsp;执&nbsp;&nbsp;行&nbsp;&nbsp;器&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>

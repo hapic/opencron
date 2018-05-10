@@ -156,6 +156,19 @@
                 </div>
                 <br>
                 <div class="form-group">
+                    <label for="jobName" class="col-lab control-label wid150">
+                        <i class="glyphicon glyphicon-tasks"></i>&nbsp;&nbsp;权重&nbsp;&nbsp;<b>*&nbsp;</b></label>
+                    <div class="col-md-10">
+                        <select class="multiselect" title="jobGroupList" id="weight" name="weight">
+                            <c:forEach var="i" begin="0" end="5" step="1">
+                                <option value="${i}">${i}</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+                <br>
+
+                <div class="form-group">
                     <label for="groupId" class="col-lab control-label wid150"><i class="glyphicon glyphicon-tasks"></i>&nbsp;&nbsp;分组名称：</label>
                     <div class="col-md-10">
                         <select class="multiselect" title="jobGroupList" id="groupId" name="groupId">

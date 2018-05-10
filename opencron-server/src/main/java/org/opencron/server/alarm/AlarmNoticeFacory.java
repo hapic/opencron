@@ -27,6 +27,9 @@ public class AlarmNoticeFacory {
 
 
     public static void sendMsg(String accept, String msg, AlarmTypes ... alarmTypes) {
+        if(alarmTypes==null || alarmTypes.length<1){
+            return;
+        }
         for(AlarmTypes at:alarmTypes){
             SendNotice instantce = AlarmNoticeFacory.getInstantce(at);
             instantce.send(accept,msg);
