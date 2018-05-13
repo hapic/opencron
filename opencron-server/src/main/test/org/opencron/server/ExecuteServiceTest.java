@@ -228,7 +228,7 @@ public class ExecuteServiceTest extends BaseTest{
         Long jobId=48L;
 //        Long jobId=44L;
         JobVo job = jobService.getJobVoById(jobId);//找到要执行的任务
-        boolean b = executeService.executeJob(job);
+        boolean b = executeService.executeJob(job,true);
         Assert.assertTrue(b);
 
 
@@ -245,7 +245,7 @@ public class ExecuteServiceTest extends BaseTest{
 
 
 
-        boolean b = executeService.executeJob(jobVo,null);
+        boolean b = executeService.executeJob(jobVo,true);
 
 
     }

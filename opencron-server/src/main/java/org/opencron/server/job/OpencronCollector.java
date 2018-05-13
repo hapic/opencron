@@ -68,7 +68,7 @@ public class OpencronCollector implements TaskCollector {
                     public void execute(TaskExecutionContext context) throws RuntimeException {
                         //自动执行
                         job.setExecType(Opencron.ExecType.AUTO.getStatus());
-                        executeService.executeJob(job);
+                        executeService.executeJob(job,true);
                     }
                 });
             }
@@ -88,7 +88,7 @@ public class OpencronCollector implements TaskCollector {
             public void execute(TaskExecutionContext context) throws RuntimeException {
                 //自动执行
                 job.setExecType(Opencron.ExecType.AUTO.getStatus());
-                executeService.executeJob(job);
+                executeService.executeJob(job,true);
             }
         });
     }

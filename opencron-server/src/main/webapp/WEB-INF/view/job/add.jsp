@@ -38,6 +38,7 @@
             $('#groupId').multiselect();
 
             $('#dependenceid').multiselect();
+            $('#weight').multiselect();
 
 
 

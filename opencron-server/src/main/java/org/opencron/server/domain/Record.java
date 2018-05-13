@@ -88,6 +88,7 @@ public class Record implements Serializable {
 
     private Integer weight=0;//任务的权重
 
+
     public Record() {
     }
 
@@ -107,6 +108,7 @@ public class Record implements Serializable {
         this.setPid(CommonUtils.uuid());
         this.setInsertDate(new Date());//插入数据库的时间
         this.setWeight(jobVo.getWeight());//作业权重
+        this.setParentId(jobVo.getRecordId());
     }
 
 

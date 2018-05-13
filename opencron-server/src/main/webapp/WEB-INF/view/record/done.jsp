@@ -331,7 +331,14 @@
                                 <span class="label label-success">&nbsp;&nbsp;成&nbsp;功&nbsp;&nbsp;</span>
                             </c:if>
                             <c:if test="${r.success eq 0}">
-                                <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;</span>
+                                <c:set value="false" var="message"></c:set>
+                                <c:if test="${r.status eq 8}">
+                                    <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
+                                    <c:set value="true" var="message"></c:set>
+                                </c:if>
+                                <c:if test="${message == false}">
+                                    <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;</span>
+                                </c:if>
                             </c:if>
                             <c:if test="${r.success eq 2}">
                                 <span class="label label-warning">&nbsp;&nbsp;被&nbsp;杀&nbsp;&nbsp;</span>
@@ -381,7 +388,14 @@
                                         <span class="label label-success">&nbsp;&nbsp;成&nbsp;功&nbsp;&nbsp;</span>
                                     </c:if>
                                     <c:if test="${rc.success eq 0}">
-                                        <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;</span>
+                                        <c:set value="false" var="message"></c:set>
+                                        <c:if test="${rc.status eq 8}">
+                                            <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
+                                            <c:set value="true" var="message"></c:set>
+                                        </c:if>
+                                        <c:if test="${message == false}">
+                                            <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;2</span>
+                                        </c:if>
                                     </c:if>
                                     <c:if test="${rc.success eq 2}">
                                         <span class="label label-warning">&nbsp;&nbsp;被&nbsp;杀&nbsp;&nbsp;</span>
@@ -423,7 +437,15 @@
                                         <span class="label label-success">&nbsp;&nbsp;成&nbsp;功&nbsp;&nbsp;</span>
                                     </c:if>
                                     <c:if test="${t.success eq 0}">
-                                        <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;</span>
+                                        <c:set value="false" var="message"></c:set>
+                                        <c:if test="${t.status eq 8}">
+                                            <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
+                                            <c:set value="true" var="message"></c:set>
+                                        </c:if>
+                                        <c:if test="${message == false}">
+                                            <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;3</span>
+                                        </c:if>
+
                                     </c:if>
                                     <c:if test="${t.success eq 2}">
                                         <span class="label label-warning">&nbsp;&nbsp;被&nbsp;杀&nbsp;&nbsp;</span>
@@ -468,7 +490,14 @@
                                                 <span class="label label-success">&nbsp;&nbsp;成&nbsp;功&nbsp;&nbsp;</span>
                                             </c:if>
                                             <c:if test="${tc.success eq 0}">
-                                                <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;</span>
+                                                <c:set value="false" var="message"></c:set>
+                                                <c:if test="${tc.status eq 8}">
+                                                    <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
+                                                    <c:set value="true" var="message"></c:set>
+                                                </c:if>
+                                                <c:if test="${message == false}">
+                                                    <span class="label label-danger">&nbsp;&nbsp;失&nbsp;败&nbsp;&nbsp;4</span>
+                                                </c:if>
                                             </c:if>
                                             <c:if test="${tc.success eq 2}">
                                                 <span class="label label-warning">&nbsp;&nbsp;被&nbsp;杀&nbsp;&nbsp;</span>

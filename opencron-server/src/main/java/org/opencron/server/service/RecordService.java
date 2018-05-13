@@ -22,9 +22,12 @@
 
 package org.opencron.server.service;
 
+import com.sun.org.apache.regexp.internal.RE;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.opencron.common.job.Opencron;
+import org.opencron.common.utils.ParamUntils;
+import org.opencron.common.utils.StringUtils;
 import org.opencron.server.DBException;
 import org.opencron.server.dao.QueryDao;
 import org.opencron.server.domain.Record;
@@ -54,7 +57,7 @@ public class RecordService {
 
     public PageBean query(HttpSession session, PageBean<RecordVo> pageBean, RecordVo recordVo, String queryTime, boolean status) {
         String sql = "SELECT R.recordId,R.jobId,R.command,R.success,R.startTime,R.status,R.redoCount,R.jobType,R.groupId,R.actionId," +
-                "CASE WHEN R.status IN (1,3,5,6) THEN R.endTime WHEN R.status IN (0,2,4,7) THEN NOW() END AS endTime," +
+                "CASE WHEN R.status IN (1,3,5,6,8) THEN R.endTime WHEN R.status IN (0,2,4,7) THEN NOW() END AS endTime," +
                 "R.execType,T.jobName,T.agentId,D.name AS agentName,D.password,D.ip,T.cronExp,U.userName AS operateUname FROM T_RECORD AS R " +
                 "LEFT JOIN T_JOB AS T " +
                 "ON R.jobId = T.jobId " +
@@ -63,13 +66,13 @@ public class RecordService {
                 "LEFT JOIN T_USER AS U " +
                 "ON R.userId = U.userId " +
                 "AND CASE R.jobType WHEN 1 THEN R.flowNum=0 WHEN 0 THEN R.parentId IS NULL END " +
-                "WHERE R.parentId is NULL ";
+                "WHERE 1=1 ";
 
         if (recordVo != null) {
             if (notEmpty(recordVo.getStatus())) {//执行状态
                 sql += " AND R.status = " + recordVo.getStatus() + "";
             }else{
-                sql+="AND R.status IN " + (status ? "(1,3,4,5,6)" : "(0,2,4,7)");
+                sql+="AND R.status IN " + (status ? "(1,3,4,5,6,8)" : "(0,2,4,7)");
             }
 
             if (notEmpty(recordVo.getSuccess())) {
@@ -234,7 +237,7 @@ public class RecordService {
                 "LEFT JOIN T_JOB AS T " +
                 "ON R.jobId = T.jobId  " +
                 "WHERE (R.jobId = ? OR T.flowId = ?) " +
-                "AND R.status IN (0,2,4) ", id, id) > 0L;
+                "AND R.status IN (0,2,4,7) ", id, id) > 0L;
     }
 
     public List<ChartVo> getRecord(HttpSession session, String startTime, String endTime) {
@@ -363,30 +366,62 @@ public class RecordService {
         return  queryDao.sqlUniqueQuery(Record.class, sql, actionId,jobId);
     }
 
+    public Record getRecord(Long actionId,JobVo job){
+        if(job.getRecordId()==null){
+            return getRecord(actionId,job.getJobId());
+        }
+        return this.get(job.getRecordId());
+
+
+    }
+
     /**
      * 插入pending状态的执行状态
-     * @param childJob
+     * @param jobVo
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Record insertPendingReocrd(Long actionId,JobVo childJob) {
+    public Record insertPendingReocrd(Long actionId,JobVo jobVo) {
+        jobVo.setActionId(actionId);
         //先判断是否已经保存过了
-        Record record = this.getRecord(actionId, childJob.getJobId());
-        log.info("actionId:{} jobId:{} record:{}",actionId, childJob.getJobId(),record);
+        Record record = this.getRecord(actionId, jobVo);
+        log.info("actionId:{} jobId:{} record:{}",actionId, jobVo.getJobId(),record);
 //        if(record!=null && record.getStatus().equals(Opencron.RunStatus.PENDING.getStatus())){//如果可以查找，则表示已经保存过了
         if(record!=null ){//如果可以查找，则表示已经保存过了
-            log.info("job:{} record:{} has exits!",childJob.getJobName(),record.getRecordId());
+            log.info("job:{} record:{} has exits!",jobVo.getJobName(),record.getRecordId());
             return record;
         }
+
+        record=insertRecord(jobVo,Opencron.RunStatus.PENDING);
+
+        return record;
+    }
+
+    /**
+     *
+     * @param childJob
+     * @return
+     */
+    public Record insertRecord(JobVo childJob,Opencron.RunStatus status) {
+        Record record=null;
+        Long actionId = childJob.getActionId();
         try {
+
             record=new Record(childJob);
-            record.setStatus(Opencron.RunStatus.PENDING.getStatus());//默认待执行
+            record.setStatus(status.getStatus());//默认待执行
             record.setGroupId(childJob.getGroupId());
             record.setActionId(actionId);
             record.setJobType(childJob.getJobType());
+
+            if(StringUtils.isNullString(childJob.getParam())){
+                record.setCommand(ParamUntils.command(record.getCommand()));//替换具体的变量值
+            }else{
+                record.setCommand(ParamUntils.command(record.getCommand(),childJob.getParam()));
+            }
+
             String code = DigestUtils.md5Hex(record.getStatus() + record.getJobId() + record.getActionId()+"");
             record.setUniqueCode(code);
             record = this.merge(record);
-            log.info("by actionId:{} jobId:{} insert into new reocrd:{}",actionId, childJob.getJobId(),record.getRecordId());
+            log.info("by actionId:{} jobId:{} insert into new reocrd:{},cmd:{}",actionId, childJob.getJobId(),record.getRecordId(),record.getCommand());
         } catch (Exception e) {
             DBException.business(e,"UK_UNIQUECODE");
             return this.getRecord(actionId, childJob.getJobId());
@@ -403,7 +438,7 @@ public class RecordService {
                 "INNER JOIN T_AGENT AS D  " +
                 "ON R.agentId = D.agentId  " +
                 "WHERE R.status=7 AND recordId<? " +
-                "ORDER BY R.`weight` DESC, R.recordId DESC,R.flowNum DESC LIMIT ?";
+                "ORDER BY R.`weight` DESC,R.flowNum DESC, R.recordId DESC LIMIT ?";
         return this.queryDao.sqlQuery(Record.class,sql,offSet,limit);
     }
 
@@ -461,5 +496,41 @@ public class RecordService {
                 "AND tr.`jobId`=tj.`jobId` " +
                 "AND tr.`startTime`<?";
         return this.queryDao.sqlQuery(RecordVo.class,sql,beforeTime);
+    }
+
+    /**
+     * 加载最新的一个执行记录
+     * @param actionId
+     * @param jobId
+     * @return
+     */
+    public Record loadLastRecord(Long actionId, Long jobId) {
+        String sql="SELECT * FROM `t_record` tr " +
+                "WHERE tr.`jobId`=? AND tr.`actionId`=? " +
+                "ORDER BY recordId DESC " +
+                "LIMIT 1";
+        return this.queryDao.sqlUniqueQuery(Record.class,sql,jobId,actionId);
+    }
+
+    public Record updateOldRecorAndInsertNewRecord(Record record, JobVo job) {
+        record.setStatus(Opencron.RunStatus.REDO.getStatus());//设置状态为重做
+        this.merge(record);//修改当前状态为重做
+
+        Record newRecord = insertRecord(job, Opencron.RunStatus.PENDING);
+        Long recordId = newRecord.getRecordId();
+        job.setRecordId(recordId);
+        log.info("insert record:{} from record:{}",newRecord.getRecordId(),record.getRecordId());
+        return newRecord;
+
+
+    }
+
+
+    public Record loadLastRecord(Long jobId) {
+        String sql="SELECT * FROM `t_record` tr " +
+                "WHERE tr.`jobId`=? " +//AND tr.`status`=1 AND tr.`success`!=1
+                "ORDER BY recordId DESC " +
+                "LIMIT 1";
+        return this.queryDao.sqlUniqueQuery(Record.class,sql,jobId);
     }
 }

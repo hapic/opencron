@@ -30,10 +30,7 @@ import org.opencron.common.job.Opencron;
 import org.opencron.common.utils.CommonUtils;
 import org.opencron.common.utils.DigestUtils;
 import org.opencron.common.utils.StringUtils;
-import org.opencron.server.domain.Agent;
-import org.opencron.server.domain.Job;
-import org.opencron.server.domain.JobDependence;
-import org.opencron.server.domain.JobGroup;
+import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.service.*;
 import org.opencron.server.tag.PageBean;
@@ -517,7 +514,7 @@ public class JobController extends BaseController {
 
     @RequestMapping(value = "execute.do",method= RequestMethod.POST)
     @ResponseBody
-    public boolean remoteExecute(HttpSession session, Long id,Long recordId) {
+    public boolean remoteExecute(HttpSession session, Long id,String inputParam) {
         JobVo job = jobService.getJobVoById(id);//找到要执行的任务
         if (!jobService.checkJobOwner(session, job.getUserId())) return false;
         //手动执行
@@ -525,10 +522,45 @@ public class JobController extends BaseController {
         job.setUserId(userId);
         job.setExecType(Opencron.ExecType.OPERATOR.getStatus());
         job.setAgent(agentService.getAgent(job.getAgentId()));
-        job.setRecordId(recordId);
-        try {
+        Record record=null;
+        String param=null;
+        if(inputParam.startsWith("$")){
+            String newParam = inputParam.replace("$", "");
+            String[] cmds = newParam.split(";");
+            Long recordId=0L;
+            for(String cmd:cmds){
+                if(cmd.startsWith("r=")){
+                    String s = cmd.replace("r=", "");
+                    recordId=Long.parseLong(s);
+                }else if(cmd.startsWith("p=")){
+                    String s = cmd.replace("p=", "");
+                    param=s;
+                }
+            }
+            record=this.recordService.get(recordId);
 
-            this.executeService.executeJob(job);
+        }else if(inputParam.startsWith("#")){//如果以#号开头，则使用最新的一个记录
+            String newParam = inputParam.replace("#", "");
+            if(newParam.startsWith("p=")){
+                String s = newParam.replace("p=", "");
+                param=s;
+            }
+            record= this.recordService.loadLastRecord(id);
+        }
+        job.setParam(param);
+        if(record!=null ){//执行成功或失败的记录
+            job.setRecordId(record.getRecordId());
+            job.setActionId(record.getActionId());
+        }else{//执行起始节点任务
+            Long actionId= jobActionGroupService.acquire(job);
+            job.setActionId(actionId);
+            this.jobActionGroupService.updateActionGroup(job, actionId);
+            record = this.recordService.insertPendingReocrd(actionId, job);
+            job.setRecordId(record.getRecordId());
+        }
+
+        try {
+            this.executeService.executeJob(job,true);
         } catch (Exception e) {
             e.printStackTrace();
         }

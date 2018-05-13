@@ -80,6 +80,7 @@
 
         $(document).ready(function () {
             opencronValidata = new Validata('${contextPath}','${csrf}','${job.jobId}');
+            $('#weight').multiselect();
             $('#dependenceid').multiselect({
                 onChange: function(option, checked, select) {
                     //判断选择的是什么运行模式

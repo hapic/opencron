@@ -39,6 +39,7 @@ import static org.opencron.common.utils.CommonUtils.toInt;
 public abstract class DateUtils {
 
     public static String format = "yyyy-MM-dd HH:mm:ss";
+    public static String format2 = "yyyyMMddHHmmss";
 
     public static String format_day = "yyyy-MM-dd";
     public static String format_day2 = "yyyyMMdd";
@@ -52,6 +53,7 @@ public abstract class DateUtils {
     private static final DateFormat simpleDateFormat2 = new SimpleDateFormat(format_day2);
     //年月日时分秒格式化对象
     private static final DateFormat fullDateFormat = new SimpleDateFormat(format);
+    private static final DateFormat fullDateFormat2 = new SimpleDateFormat(format2);
 
     private static int weeks = 0;
 
@@ -69,6 +71,7 @@ public abstract class DateUtils {
         return simpleDateFormat.format(date);
     }
 
+
     /**
      * 全日期格式格式化
      * @param date
@@ -79,6 +82,12 @@ public abstract class DateUtils {
             return null;
         }
         return fullDateFormat.format(date);
+    }
+    public static String formatFullDate2(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return fullDateFormat2.format(date);
     }
     public static String formatDayDate(Date date) {
         if (date == null) {

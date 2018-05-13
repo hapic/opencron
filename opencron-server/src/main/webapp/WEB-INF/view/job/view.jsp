@@ -502,20 +502,23 @@
             },function (data) {
                 if (!data) {
                     swal({
-                        title: "",
-                        text: "您确定要执行这个作业吗？",
-                        type: "warning",
+                        title: "您确定要执行这个作业吗？",
+                        text: "请输入执行参数!",
+                        type: "input",
                         showCancelButton: true,
                         closeOnConfirm: false,
-                        confirmButtonText: "执行"
-                    }, function () {
+                        confirmButtonText: "执行",
+                        inputPlaceholder: "请输入执行参数,默认为当前时间"
+                    }, function (inputParam) {
+                        if (inputParam === false) return false;
+
                         ajax({
                             headers: {"csrf": "${csrf}"},
                             type: "POST",
                             url: "${contextPath}/job/execute.do",
-                            data: {"id": id}
+                            data: {"id": id,"inputParam":inputParam}
                         });
-                        alertMsg("该作业已启动,正在执行中.");
+                        alertMsg("该作业已启动,稍后执行...");
                     });
                 } else {
                     alert("当前作业已在运行中,不能重复执行!");
@@ -1057,6 +1060,8 @@
                                 node["color"]="lightgreen";//成功运行，绿色显示
                             }else if(obj.status==1 && obj.success!=1){//失败的
                                 node["color"]="red";//成功运行，绿色显示
+                            }else if(obj.status==8){//如果是冲新运行的color: "orange"
+                                node["color"]="orange";//如果是冲新运行的
                             }else{
                                 node["color"]="lightgray";//其他都是待运行
                             }

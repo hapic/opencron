@@ -7,27 +7,68 @@ package org.opencron.common.utils;
  * @version V1.0
  */
 
+import java.util.Date;
+
 /**
  * @Descriptions: 参数替替换
  */
 public class ParamUntils {
 
-    String command;
-    enum Param{
-        DATE,TIME,USERID;
-        String name;
+    private static String P_DATE="$date";
+    private static String P_TIME="$time";
 
-        public String getName() {
-            return name;
-        }
 
-        public void setName(String name) {
-            this.name = name;
+    public static String command(String command){
+        String[] split = command.split(" ");
+        StringBuffer sb= new StringBuffer(split[0]);
+        for(String cmd:split){
+            if(cmd.startsWith("$")){
+               String value= replace(cmd);
+                sb.append(" "+value);
+            }
         }
+        return sb.toString();
     }
 
-    public String command(String command,Param param,String value){
-        return command.toLowerCase().replaceAll("$"+param.getName().toLowerCase()+"$",value);
+    /**
+     * 返回年月日时分秒
+     * @param cmd
+     * @return
+     */
+    private static String replace(String cmd) {
+        if(cmd.equalsIgnoreCase(P_TIME)){
+            return DateUtils.formatFullDate2(new Date());
+        }else if(cmd.equalsIgnoreCase(P_DATE)){
+            return DateUtils.formatDayDate(new Date());
+        }
+        return "";
+    }
+
+    public static String command(String command,String...values){
+        String[] split = command.split(" ");
+        StringBuffer sb= new StringBuffer(split[0]);
+        for(String value:values){
+            sb.append(" "+value);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 根据一个命令获取参数
+     * @param command
+     * @return
+     */
+    public static String param(String command){
+        if(command.indexOf(" ")==-1){
+            return command;
+        }
+        StringBuffer sb= new StringBuffer(command);
+        return sb.substring(sb.indexOf(" ")).trim();
+    }
+
+    public static void main(String[] args) {
+        String parma = param("/ab/c/c.sh 18273 232");
+        System.out.println(parma);
     }
 
 

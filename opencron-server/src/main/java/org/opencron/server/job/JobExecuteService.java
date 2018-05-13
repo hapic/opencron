@@ -33,7 +33,7 @@ public class JobExecuteService implements Runnable {
 
     @Override
     public void run() {
-        executeService.executeJob(jobVo, record.getActionId());
+        executeService.executeJob(jobVo, record.getActionId(),true);
 
     }
 }
