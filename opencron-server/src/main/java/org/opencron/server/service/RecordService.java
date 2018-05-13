@@ -57,7 +57,7 @@ public class RecordService {
 
     public PageBean query(HttpSession session, PageBean<RecordVo> pageBean, RecordVo recordVo, String queryTime, boolean status) {
         String sql = "SELECT R.recordId,R.jobId,R.command,R.success,R.startTime,R.status,R.redoCount,R.jobType,R.groupId,R.actionId," +
-                "CASE WHEN R.status IN (1,3,5,6,8) THEN R.endTime WHEN R.status IN (0,2,4,7) THEN NOW() END AS endTime," +
+                "CASE WHEN R.status IN (1,3,5,6) THEN R.endTime WHEN R.status IN (0,2,4,7) THEN NOW() END AS endTime," +
                 "R.execType,T.jobName,T.agentId,D.name AS agentName,D.password,D.ip,T.cronExp,U.userName AS operateUname FROM T_RECORD AS R " +
                 "LEFT JOIN T_JOB AS T " +
                 "ON R.jobId = T.jobId " +
@@ -72,7 +72,7 @@ public class RecordService {
             if (notEmpty(recordVo.getStatus())) {//执行状态
                 sql += " AND R.status = " + recordVo.getStatus() + "";
             }else{
-                sql+="AND R.status IN " + (status ? "(1,3,4,5,6,8)" : "(0,2,4,7)");
+                sql+="AND R.status IN " + (status ? "(1,3,4,5,6)" : "(0,2,4,7)");
             }
 
             if (notEmpty(recordVo.getSuccess())) {
@@ -304,6 +304,30 @@ public class RecordService {
         return queryDao.sqlQuery(Record.class, sql, recordId);
     }
 
+
+    /**
+     * 获取作业数
+     * @param status
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public Long getTask( int status,String startDate,String endDate){
+        String sql;
+        if (status == 1) {
+            sql = "SELECT COUNT(DISTINCT(jobId)) FROM T_RECORD WHERE success=?   AND STATUS IN (?,?,?)  ";
+        } else {
+            sql = "SELECT COUNT(DISTINCT(jobId)) FROM T_RECORD WHERE success<>?   AND STATUS IN (?,?,?) ";
+        }
+
+        if (notEmpty(startDate, endDate)) {
+            sql+=" AND insertDate BETWEEN '"+startDate+"' AND  DATE_ADD('"+endDate+"',INTERVAL 1 DAY)";
+        }
+        return queryDao.getCountBySql(sql, 1,
+                Opencron.RunStatus.STOPED.getStatus(),Opencron.RunStatus.DONE.getStatus(),Opencron.RunStatus.RERUNDONE.getStatus());
+
+    }
+
     public Long getRecords(HttpSession session, int status, Opencron.ExecType execType,String startDate,String endDate) {
         String sql;
         if (status == 1) {
@@ -320,7 +344,8 @@ public class RecordService {
         }
 
 
-        return queryDao.getCountBySql(sql, 1, execType.getStatus(), Opencron.RunStatus.STOPED.getStatus(),Opencron.RunStatus.DONE.getStatus(),Opencron.RunStatus.RERUNDONE.getStatus());
+        return queryDao.getCountBySql(sql, 1, execType.getStatus(),
+                Opencron.RunStatus.STOPED.getStatus(),Opencron.RunStatus.DONE.getStatus(),Opencron.RunStatus.RERUNDONE.getStatus());
     }
 
     @Transactional
@@ -513,7 +538,7 @@ public class RecordService {
     }
 
     public Record updateOldRecorAndInsertNewRecord(Record record, JobVo job) {
-        record.setStatus(Opencron.RunStatus.REDO.getStatus());//设置状态为重做
+        record.setStatus(Opencron.RunStatus.RERUNDONE.getStatus());//设置状态为重做
         this.merge(record);//修改当前状态为重做
 
         Record newRecord = insertRecord(job, Opencron.RunStatus.PENDING);

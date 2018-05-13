@@ -253,7 +253,7 @@
 
         <!-- cards -->
         <div class="row cards">
-            <div class="card-container col-lg-3 col-sm-6 col-sm-12">
+            <div class="card-container col-lg-2 col-sm-6 col-sm-12">
                 <div class="card hover" onclick="javascript:window.location.href='${contextPath}/agent/view.htm?csrf=${csrf}'">
                     <div class="front count">
                         <div class="media">
@@ -267,7 +267,7 @@
 
                         <div class="progress-list">
                             <div class="details">
-                                <div class="title">通信状态(正常机器/失联机器)</div>
+                                <div class="title">(正常机器/失联机器)</div>
                             </div>
                             <div class="status pull-right bg-transparent-black-1">
                                 <span data-animation-duration="1500" data-value="" class="animate-number" id="agent_number" ></span>%
@@ -280,7 +280,7 @@
                 </div>
             </div>
 
-            <div class="card-container col-lg-3 col-sm-6 col-sm-12">
+            <div class="card-container col-lg-2 col-sm-6 col-sm-12">
                 <div class="card hover" onclick="javascript:window.location.href='${contextPath}/job/view.htm?csrf=${csrf}'">
                     <div class="front count">
                         <div class="media">
@@ -293,7 +293,7 @@
 
                         <div class="progress-list">
                             <div class="details">
-                                <div class="title">作业类型(单一任务/流程任务)</div>
+                                <div class="title">(单一任务/流程任务)</div>
                             </div>
                             <div class="status pull-right bg-transparent-black-1">
                                 <span data-animation-duration="1500" data-value="" class="animate-number" id="job_number"></span>%
@@ -307,20 +307,73 @@
                 </div>
             </div>
 
-            <div class="card-container col-lg-3 col-sm-6 col-sm-12">
-                <div class="card hover" onclick="javascript:window.location.href='${contextPath}/record/done.htm?success=1&csrf=${csrf}'">
+            <div class="card-container col-lg-2 col-sm-6 col-sm-12">
+                <div class="card hover" onclick="javascript:window.location.href='${contextPath}/record/done.htm?success=1&csrf=${csrf}&queryTime=${startDate}'">
                     <div class="front count">
                         <div class="media">
                             <span class="pull-left"><i style="font-size: 60px;margin-top: 0px;" class="fa fa-thumbs-o-up" aria-hidden="true"></i></span>
                             <div class="media-body">
                                 <small>成功作业</small>
+                                <h2 data-animation-duration="1500" data-value="0" id="successRecord2" class="media-heading animate-number">${successTask}</h2>
+                            </div>
+                        </div>
+
+                        <%--<div class="progress-list">
+                            <div class="details">
+                                <div class="title">(自动执行/手动执行)</div>
+                            </div>
+                            <div class="status pull-right bg-transparent-black-1">
+                                <span data-animation-duration="1500" data-value="" class="animate-number" id="ok_number2"></span>%
+                            </div>
+                            <div class="progress progress-sm progress-transparent-black">
+                                <div data-percentage="0%" class="progress-bar animate-progress-bar" id="ok_number_prop2"></div>
+                            </div>
+                        </div>--%>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-container col-lg-2 col-sm-6 col-sm-12">
+                <div class="card hover" onclick="javascript:window.location.href='${contextPath}/record/done.htm?success=0&csrf=${csrf}&queryTime=${startDate}'">
+                    <div class="front count">
+                        <div class="media">
+                            <span class="pull-left"><i style="font-size: 60px;margin-top: -3px;" class="fa fa-thumbs-o-down" aria-hidden="true"></i></span>
+                            <div class="media-body">
+                                <small>失败作业</small>
+                                <h2 data-animation-duration="1500" data-value="0" id="failedRecord2" class="media-heading animate-number">${failedTask}</h2>
+                            </div>
+                        </div>
+
+                        <%--<div class="progress-list">
+                            <div class="details">
+                                <div class="title">(自动执行/手动执行)</div>
+                            </div>
+                            <div class="status pull-right bg-transparent-black-1">
+                                <span data-animation-duration="1500" data-value="" class="animate-number" id="no_number2"></span>%
+                            </div>
+                            <div class="progress progress-sm progress-transparent-black">
+                                <div data-percentage="0%" class="progress-bar animate-progress-bar" id="no_number_prop2"></div>
+                            </div>
+                        </div>--%>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="card-container col-lg-2 col-sm-6 col-sm-12">
+                <div class="card hover" onclick="javascript:window.location.href='${contextPath}/record/done.htm?success=1&csrf=${csrf}'">
+                    <div class="front count">
+                        <div class="media">
+                            <span class="pull-left"><i style="font-size: 60px;margin-top: 0px;" class="fa fa-thumbs-o-up" aria-hidden="true"></i></span>
+                            <div class="media-body">
+                                <small>成功记录</small>
                                 <h2 data-animation-duration="1500" data-value="0" id="successRecord" class="media-heading animate-number">${successRecord}</h2>
                             </div>
                         </div>
 
                         <div class="progress-list">
                             <div class="details">
-                                <div class="title">执行类型(自动执行/手动执行)</div>
+                                <div class="title">(自动执行/手动执行)</div>
                             </div>
                             <div class="status pull-right bg-transparent-black-1">
                                 <span data-animation-duration="1500" data-value="" class="animate-number" id="ok_number"></span>%
@@ -333,20 +386,21 @@
                 </div>
             </div>
 
-            <div class="card-container col-lg-3 col-sm-6 col-sm-12">
+            <!-- 成功记录数 -->
+            <div class="card-container col-lg-2 col-sm-6 col-sm-12">
                 <div class="card hover" onclick="javascript:window.location.href='${contextPath}/record/done.htm?success=0&csrf=${csrf}'">
                     <div class="front count">
                         <div class="media">
                             <span class="pull-left"><i style="font-size: 60px;margin-top: -3px;" class="fa fa-thumbs-o-down" aria-hidden="true"></i></span>
                             <div class="media-body">
-                                <small>失败作业</small>
+                                <small>失败记录</small>
                                 <h2 data-animation-duration="1500" data-value="0" id="failedRecord" class="media-heading animate-number">${failedRecord}</h2>
                             </div>
                         </div>
 
                         <div class="progress-list">
                             <div class="details">
-                                <div class="title">执行类型(自动执行/手动执行)</div>
+                                <div class="title">(自动执行/手动执行)</div>
                             </div>
                             <div class="status pull-right bg-transparent-black-1">
                                 <span data-animation-duration="1500" data-value="" class="animate-number" id="no_number"></span>%

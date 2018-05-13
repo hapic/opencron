@@ -332,7 +332,7 @@
                             </c:if>
                             <c:if test="${r.success eq 0}">
                                 <c:set value="false" var="message"></c:set>
-                                <c:if test="${r.status eq 8}">
+                                <c:if test="${r.status eq 6}">
                                     <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
                                     <c:set value="true" var="message"></c:set>
                                 </c:if>
@@ -389,7 +389,7 @@
                                     </c:if>
                                     <c:if test="${rc.success eq 0}">
                                         <c:set value="false" var="message"></c:set>
-                                        <c:if test="${rc.status eq 8}">
+                                        <c:if test="${rc.status eq 6}">
                                             <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
                                             <c:set value="true" var="message"></c:set>
                                         </c:if>
@@ -438,7 +438,7 @@
                                     </c:if>
                                     <c:if test="${t.success eq 0}">
                                         <c:set value="false" var="message"></c:set>
-                                        <c:if test="${t.status eq 8}">
+                                        <c:if test="${t.status eq 6}">
                                             <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
                                             <c:set value="true" var="message"></c:set>
                                         </c:if>
@@ -491,7 +491,7 @@
                                             </c:if>
                                             <c:if test="${tc.success eq 0}">
                                                 <c:set value="false" var="message"></c:set>
-                                                <c:if test="${tc.status eq 8}">
+                                                <c:if test="${tc.status eq 6}">
                                                     <span class="label label-danger">&nbsp;已&nbsp;重&nbsp;做&nbsp;</span>
                                                     <c:set value="true" var="message"></c:set>
                                                 </c:if>

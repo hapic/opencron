@@ -1060,7 +1060,7 @@
                                 node["color"]="lightgreen";//成功运行，绿色显示
                             }else if(obj.status==1 && obj.success!=1){//失败的
                                 node["color"]="red";//成功运行，绿色显示
-                            }else if(obj.status==8){//如果是冲新运行的color: "orange"
+                            }else if(obj.status==6){//如果是冲新运行的color: "orange"
                                 node["color"]="orange";//如果是冲新运行的
                             }else{
                                 node["color"]="lightgray";//其他都是待运行

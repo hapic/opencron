@@ -146,6 +146,11 @@ public class DashboardController extends BaseController {
         model.addAttribute("startDate", startTime);
         model.addAttribute("endDate", endTime);
 
+       Long failedTask= recordService.getTask( 0,startTime,endTime);
+       Long successTask= recordService.getTask( 1, startTime,endTime);
+        model.addAttribute("failedTask", failedTask);
+        model.addAttribute("successTask", successTask);
+
 
         model.addAttribute("startTime", DateUtils.getCurrDayPrevDay(7));
         model.addAttribute("endTime", DateUtils.formatSimpleDate(new Date()));
