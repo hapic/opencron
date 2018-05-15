@@ -57,7 +57,7 @@
 
     <!--封装sendNotice的实现类-->
     <util:map id="SendNoticeMap">
-        <!--<entry key="DINGDING" value-ref="ddSendNotice"/>-->
+        <entry key="DINGDING" value-ref="ddSendNotice"/>
         <!--<entry key="SMS" value-ref="smsSendNotice"/>-->
     </util:map>
 

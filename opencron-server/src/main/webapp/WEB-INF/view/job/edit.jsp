@@ -304,7 +304,7 @@
                 </div>
                 <br>
 
-                <div class="form-group">
+                <div class="form-group"  style="display: none;">
                     <label class="col-lab control-label wid150"><i class="glyphicon glyphicon-warning-sign"></i>&nbsp;&nbsp;失败报警&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <label for="warning1" class="radio-label"><input type="radio" name="warning" value="1" id="warning1" ${job.warning eq true ? 'checked' : ''}>是&nbsp;&nbsp;&nbsp;</label>
@@ -314,7 +314,7 @@
                 </div>
                 <br>
 
-                <div class="form-group contact">
+                <div class="form-group contact"  style="display: none;">
                     <label for="mobiles" class="col-lab control-label wid150"><i class="glyphicon glyphicon-comment"></i>&nbsp;&nbsp;报警手机&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="mobiles" name="mobiles" value="${job.mobiles}">

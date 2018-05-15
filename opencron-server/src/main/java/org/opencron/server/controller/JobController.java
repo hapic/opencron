@@ -29,6 +29,7 @@ import org.opencron.common.graph.Node;
 import org.opencron.common.job.Opencron;
 import org.opencron.common.utils.CommonUtils;
 import org.opencron.common.utils.DigestUtils;
+import org.opencron.common.utils.ExecuteJobCache;
 import org.opencron.common.utils.StringUtils;
 import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronTools;
@@ -509,14 +510,24 @@ public class JobController extends BaseController {
     @RequestMapping(value = "canrun.do",method= RequestMethod.POST)
     @ResponseBody
     public boolean canRun(Long id) {
+        if(!ExecuteJobCache.checkJobId(id)){//判断是否重复执行了
+            return true;
+        }
         return recordService.isRunning(id);
     }
 
     @RequestMapping(value = "execute.do",method= RequestMethod.POST)
     @ResponseBody
     public boolean remoteExecute(HttpSession session, Long id,String inputParam) {
+
         JobVo job = jobService.getJobVoById(id);//找到要执行的任务
+
         if (!jobService.checkJobOwner(session, job.getUserId())) return false;
+
+        if(!ExecuteJobCache.addRecord(id)){//判断是否重复执行了
+            return false;
+        }
+
         //手动执行
         Long userId = OpencronTools.getUserId(session);
         job.setUserId(userId);
@@ -560,6 +571,7 @@ public class JobController extends BaseController {
         }
 
         try {
+
             this.executeService.executeJob(job,true);
         } catch (Exception e) {
             e.printStackTrace();

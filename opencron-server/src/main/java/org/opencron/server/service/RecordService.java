@@ -415,7 +415,6 @@ public class RecordService {
             log.info("job:{} record:{} has exits!",jobVo.getJobName(),record.getRecordId());
             return record;
         }
-
         record=insertRecord(jobVo,Opencron.RunStatus.PENDING);
 
         return record;

@@ -18,16 +18,22 @@ public class ParamUntils {
     private static String P_TIME="$time";
 
 
-    public static String command(String command){
+    public static String command(String command,Date date){
         String[] split = command.split(" ");
-        StringBuffer sb= new StringBuffer(split[0]);
+        StringBuffer sb= new StringBuffer();
         for(String cmd:split){
             if(cmd.startsWith("$")){
-               String value= replace(cmd);
+               String value= replace(cmd,date);
                 sb.append(" "+value);
+            }else{
+                sb.append(" "+cmd);
             }
         }
         return sb.toString();
+    }
+
+    public static String command(String command){
+        return command(command,new Date());
     }
 
     /**
@@ -35,18 +41,27 @@ public class ParamUntils {
      * @param cmd
      * @return
      */
-    private static String replace(String cmd) {
+    private static String replace(String cmd,Date date) {
         if(cmd.equalsIgnoreCase(P_TIME)){
-            return DateUtils.formatFullDate2(new Date());
+            return DateUtils.formatFullDate2(date);
         }else if(cmd.equalsIgnoreCase(P_DATE)){
-            return DateUtils.formatDayDate(new Date());
+            return DateUtils.formatSimpleDate(date);
         }
         return "";
     }
+    private static String replace(String cmd) {
+        return replace(cmd,new Date());
+    }
 
     public static String command(String command,String...values){
-        String[] split = command.split(" ");
-        StringBuffer sb= new StringBuffer(split[0]);
+        int index$ = command.indexOf("$");
+        String substring=null;
+        if(index$>-1){
+            substring = command.substring(0,index$);
+        }else {
+            substring=command;
+        }
+        StringBuffer sb= new StringBuffer(substring);
         for(String value:values){
             sb.append(" "+value);
         }
@@ -67,8 +82,11 @@ public class ParamUntils {
     }
 
     public static void main(String[] args) {
-        String parma = param("/ab/c/c.sh 18273 232");
-        System.out.println(parma);
+
+        String cmd="date;sleep 30s;";
+        String command = ParamUntils.command(cmd,"2018-03-12");
+//        String parma = param("/ab/c/c.sh 18273 232");
+        System.out.println(command);
     }
 
 

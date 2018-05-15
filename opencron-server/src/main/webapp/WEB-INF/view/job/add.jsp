@@ -273,17 +273,17 @@
                     </div>
                 </div>
                 <br>
-                <div class="form-group">
+                <div class="form-group" style="display: none;">
                     <label class="col-lab control-label wid150"><i class="glyphicon glyphicon-warning-sign"></i>&nbsp;&nbsp;失败报警&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
-                        <label for="warning1" class="radio-label"><input type="radio" name="warning" value="1" id="warning1" checked>是&nbsp;&nbsp;&nbsp;</label>
-                        <label for="warning0" class="radio-label"><input type="radio" name="warning" value="0" id="warning0">否</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <label for="warning1" class="radio-label"><input type="radio" name="warning" value="1" id="warning1" >是&nbsp;&nbsp;&nbsp;</label>
+                        <label for="warning0" class="radio-label"><input type="radio" name="warning" value="0" id="warning0" checked>否</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                         </br><span class="tips" tip="任务执行失败时是否发信息报警">任务执行失败时是否发信息报警</span>
                     </div>
                 </div>
                 <br>
 
-                <div class="form-group contact">
+                <div class="form-group contact" style="display: none;">
                     <label for="mobiles" class="col-lab control-label wid150"><i class="glyphicon glyphicon-comment"></i>&nbsp;&nbsp;报警手机&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="mobiles" name="mobiles">
@@ -292,7 +292,7 @@
                 </div>
                 <br>
 
-                <div class="form-group contact">
+                <div class="form-group contact" style="display: none;">
                     <label for="email" class="col-lab control-label wid150"><i class="glyphicon glyphicon-envelope"></i>&nbsp;&nbsp;报警邮箱&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="email" name="emailAddress">
@@ -301,7 +301,7 @@
                 </div>
                 <br>
 
-                <div class="form-group">
+                <div class="form-group" >
                     <label for="comment" class="col-lab control-label wid150"><i class="glyphicon glyphicon-magnet"></i>&nbsp;&nbsp;描&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;述&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <textarea class="form-control input-sm" id="comment" name="comment" style="height: 50px;"></textarea>

@@ -26,9 +26,9 @@ import java.io.IOException;
 @Component("ddSendNotice")
 public class DDSendNotice implements SendNotice {
 
-
+//    https://oapi.dingtalk.com/robot/send?access_token=
     private RecordVo record;
-    String token="63b9b07ea3e4eaadd49efdf681610958435e6e011303a08e99ce8e754e64d108";
+    String token="b4538d0fe797dc828727eb896d96cd6744c31622a110118ae00c8a883d69bbf8";
     String url="http://frcsms.eloancn.com/SendSMS/sendMsgByHs?access_token="+token;
 
     @Override

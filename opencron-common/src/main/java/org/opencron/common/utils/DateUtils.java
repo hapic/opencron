@@ -517,6 +517,10 @@ public abstract class DateUtils {
         return statTime;
     }
 
+    public static Long getCurrentTime(){
+        return System.currentTimeMillis();
+    }
+
     public static Date formatDate(String dayTime) {
         Date parse = null;
         try {

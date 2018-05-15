@@ -117,7 +117,7 @@ public class OpencronTask implements InitializingBean {
     /**
      * 任务超时未完成告警
      */
-//    @Scheduled(cron = "0 0/5 * * * ? *")
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void unfinishedAlarm() {
             //加载超时(30m)未完成的
         String beforeTime= DateUtils.beforeTime(3*60);

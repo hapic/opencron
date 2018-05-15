@@ -233,7 +233,7 @@ public class ExecuteService implements Job {
             logger.info("job:{} dependent job not done!");
             return false;
         }
-        if(job.getFlowNum()>0){
+        if(job.getFlowNum()>0 || job.getLastChild()){
             //清理相关的记录
             this.jobGroupService.clearActionId(actionId);
         }

@@ -294,10 +294,11 @@
                 <th>执行器</th>
                 <th>执行命令</th>
                 <th>开始时间</th>
+                <th>结束时间</th>
                 <th>运行时长</th>
                 <th>运行状态</th>
                 <th>执行方式</th>
-                <th>任务类型</th>
+                <%--<th>任务类型</th>--%>
                 <th><center>操作</center></th>
             </tr>
             </thead>
@@ -321,10 +322,12 @@
                             </center>
                         </td>
                         <td>${r.agentName}</td>
-                        <td style="width: 25%" title="${cron:escapeHtml(r.command)}">
+                        <td style="width: 20%" title="${cron:escapeHtml(r.command)}">
                             <div class="opencron_command">${cron:escapeHtml(r.command)}</div>
+                            <%--<div class="opencron_command">${${cron:substr(r.command, 0,15 ,"..." )}}</div>--%>
                         </td>
                         <td><fmt:formatDate value="${r.startTime}" pattern="yyyy-MM-dd HH:mm:ss"/></td>
+                        <td><fmt:formatDate value="${r.endTime}" pattern="yyyy-MM-dd HH:mm:ss"/></td>
                         <td>${cron:diffdate(r.startTime,r.endTime)}</td>
                         <td>
                             <c:if test="${r.success eq 1}">
@@ -353,10 +356,10 @@
                             <c:if test="${r.execType eq 2}"><span class="label label-warning">&nbsp;&nbsp;重&nbsp;跑&nbsp;&nbsp;</span></c:if>
                             <c:if test="${r.execType eq 3}"><span class="label label-default" style="color: green;font-weight:bold">&nbsp;&nbsp;现&nbsp;场&nbsp;&nbsp;</span></c:if>
                         </td>
-                        <td>
+                       <%-- <td>
                             <c:if test="${r.jobType eq 1}">流程任务</c:if>
                             <c:if test="${r.jobType eq 0}">单一任务</c:if>
-                        </td>
+                        </td>--%>
                         <td>
                             <center>
                                 <div class="visible-md visible-lg hidden-sm hidden-xs action-buttons">
