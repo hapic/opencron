@@ -98,7 +98,11 @@ public class JobController extends BaseController {
         }
         if (notEmpty(job.getAgentId())) {
             model.addAttribute("agentId", job.getAgentId());
+            model.addAttribute("jobs", jobService.getJobByAgentId(job.getAgentId(),job.getGroupId()));
+        }else{
+            model.addAttribute("jobs", jobService.getAll(job.getGroupId()));
         }
+
         if (notEmpty(job.getCronType())) {
             model.addAttribute("cronType", job.getCronType());
         }
@@ -108,11 +112,15 @@ public class JobController extends BaseController {
         if (notEmpty(job.getExecType())) {
             model.addAttribute("execType", job.getExecType());
         }
-        if (notEmpty(job.getRedo())) {
+        /*if (notEmpty(job.getRedo())) {
             model.addAttribute("redo", job.getRedo());
-        }
+        }*/
         if (notEmpty(job.getGroupId())) {
             model.addAttribute("groupId", job.getGroupId());
+        }
+
+        if (notEmpty(job.getJobId())) {
+            model.addAttribute("jobId", job.getJobId());
         }
         model.addAttribute("groups", jobGroupService.getAll());
 

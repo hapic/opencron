@@ -20,7 +20,13 @@
     <script type="text/javascript" src="${contextPath}/static/js/go.js"></script>
     <script type="text/javascript" src="${contextPath}/static/js/diagram.js"></script>
     <script type="text/javascript">
-
+        var jobInfo={
+            totalJob:0,
+            runnigJob:0,
+            successTask:0,
+            errorTask:0,
+            pendingTask:0
+        };
         var toggle = {
             cronexp:{
                 show:function () {
@@ -360,6 +366,8 @@
             $("#warning1").next().bind("click",toggle.contact.show);
             $("#warning0").next().bind("click",toggle.contact.hide);
 
+            $("#jobId").change(function(){doUrl();});
+
             $("#size").change(function () {
                 doUrl();
             });
@@ -448,9 +456,9 @@
             var cronType = $("#cronType").val();
 //            var jobType = $("#jobType").val();
             var execType = $("#execType").val();
-            var redo = $("#redo").val();
+            var jobId = $("#jobId").val();
             var groupId = $("#groupId").val();
-            window.location.href = "${contextPath}/job/view.htm?agentId=" + agentId + "&cronType=" + cronType + "&groupId=" + groupId + "&execType=" + execType + "&redo=" + redo + "&pageSize=" + pageSize + "&csrf=${csrf}";
+            window.location.href = "${contextPath}/job/view.htm?agentId=" + agentId + "&cronType=" + cronType + "&groupId=" + groupId + "&execType=" + execType + "&jobId=" + jobId + "&pageSize=" + pageSize + "&csrf=${csrf}";
         }
 
         function pauseJob(id,status) {
@@ -659,7 +667,11 @@
         <li><a href="">作业管理</a></li>
         <li><a href="">作业列表</a></li>
     </ol>
-    <h4 class="page-title"><i class="fa fa-tasks" aria-hidden="true"></i>&nbsp;作业列表</h4>
+    <h4 class="page-title">
+        <i class="fa fa-tasks" aria-hidden="true"></i>
+        &nbsp;作业列表
+        <span id="taskInfo" style="font-size:16px"></span>
+    </h4>
 
     <!-- Deafult Table -->
     <div class="block-area" id="defaultStyle">
@@ -700,7 +712,14 @@
                         <option value="${t.id}" ${t.id eq groupId ? 'selected' : ''}>${t.name}&nbsp;</option>
                     </c:forEach>
                 </select>
-
+                &nbsp;&nbsp;&nbsp;
+                <label for="jobId">任务名称：</label>
+                <select id="jobId" name="jobId" class="select-opencron" style="width: 110px;">
+                    <option value="">全部</option>
+                    <c:forEach var="t" items="${jobs}">
+                        <option value="${t.jobId}" ${t.jobId eq jobId ? 'selected' : ''}>${t.jobName}&nbsp;</option>
+                    </c:forEach>
+                </select>
                 &nbsp;&nbsp;&nbsp;
                 <label for="execType">运行模式：</label>
                 <select id="execType" name="execType" class="select-opencron" style="width: 80px;">
@@ -708,14 +727,13 @@
                     <option value="1" ${execType eq 1 ? 'selected' : ''}>手动</option>
                     <option value="0" ${execType eq 0 ? 'selected' : ''}>自动</option>
                 </select>
-                &nbsp;&nbsp;&nbsp;
 
-                <label for="redo">重跑：</label>
+               <%-- <label for="redo">重跑：</label>
                 <select id="redo" name="redo" class="select-opencron" style="width: 80px;">
                     <option value="">全部</option>
                     <option value="1" ${redo eq 1 ? 'selected' : ''}>是</option>
                     <option value="0" ${redo eq 0 ? 'selected' : ''}>否</option>
-                </select>
+                </select>--%>
 
                 <a href="${contextPath}/job/add.htm?csrf=${csrf}&groupId=${param.groupId}" class="btn btn-sm m-t-10"
                    style="margin-left: 20px;margin-bottom: 8px;margin-top: -3px;"><i class="icon">&#61943;</i>添加</a>
@@ -1054,20 +1072,23 @@
                             strJob+=obj.jobId+"-";
                             node["key"]=obj.jobId+"-"+timestamp;
                             node["name"]=obj.jobName;
+                            jobInfo.totalJob=jobInfo.totalJob+1;
                             if(obj.status==0){
+                                jobInfo.runnigJob=jobInfo.runnigJob+1;
                                 node["color"]="lightblue";//运行中的蓝色显示
                             }else if(obj.status==1 && obj.success==1){//成功运行
+                                jobInfo.successTask=jobInfo.successTask+1;
                                 node["color"]="lightgreen";//成功运行，绿色显示
                             }else if(obj.status==1 && obj.success!=1){//失败的
+                                jobInfo.errorTask=jobInfo.errorTask+1;
                                 node["color"]="red";//成功运行，绿色显示
                             }else if(obj.status==6){//如果是冲新运行的color: "orange"
                                 node["color"]="orange";//如果是冲新运行的
                             }else{
+                                jobInfo.pendingTask=jobInfo.pendingTask+1;
                                 node["color"]="lightgray";//其他都是待运行
                             }
                             modules.push(node);
-
-
                         });
                         if(moduleshierarchy.length>0){
                             fillDiagramData("diagramDiv",modules,moduleshierarchy);
@@ -1076,7 +1097,8 @@
                         }
                     }
                 });
-
+                var info="【总任务数:"+jobInfo.totalJob+",待运行任务:"+jobInfo.pendingTask+",运行中:"+jobInfo.runnigJob+",成功运行:"+jobInfo.successTask+",失败运行:"+jobInfo.errorTask+"】";
+                $("#taskInfo").html(info);
 
             });
 

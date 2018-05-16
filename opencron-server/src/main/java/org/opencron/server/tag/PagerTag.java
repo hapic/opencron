@@ -78,6 +78,8 @@ public class PagerTag extends SimpleTagSupport {
             super.doTag();
             return;
         }
+        out.append("<span style='font-size:20px'>总记录数:"+total+"</span>");
+
         out.append("<ul class='pagination fr mr20'>");
         // 首页
         if (id == 1) {

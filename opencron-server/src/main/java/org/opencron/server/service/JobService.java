@@ -194,6 +194,9 @@ public class JobService {
                 "WHERE T.deleted=0 ";
 
         if (job != null) {
+            if (notEmpty(job.getJobId())) {
+                sql += " AND T.jobId=" + job.getJobId();
+            }
             if (notEmpty(job.getGroupId())) {
                 sql += " AND T.groupId=" + job.getGroupId();
             }
