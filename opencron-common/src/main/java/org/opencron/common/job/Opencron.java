@@ -231,7 +231,8 @@ public class Opencron implements Serializable {
         RERUNUNDONE(0x5, "rerunundone", "重跑未完成"),
         RERUNDONE(0x6, "rerundone", "重跑完成"),
         PENDING(0x7, "pending", "待执行"),
-        REDO(0x8, "pending", "重做");
+        REDO(0x8, "pending", "重做"),
+        QUARTATRI(0x9, "pending", "等待quartz触发");
 
         private Integer status;
         private String name;

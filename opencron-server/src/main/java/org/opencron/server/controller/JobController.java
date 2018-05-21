@@ -388,6 +388,7 @@ public class JobController extends BaseController {
         dbJob.setRunCount(job.getRunCount());
         dbJob.setWarning(job.getWarning());
         dbJob.setTimeout(job.getTimeout());
+        dbJob.setWeight(job.getWeight());
         if (dbJob.getWarning()) {
             dbJob.setMobiles(job.getMobiles());
             dbJob.setEmailAddress(job.getEmailAddress());
@@ -574,13 +575,13 @@ public class JobController extends BaseController {
             Long actionId= jobActionGroupService.acquire(job);
             job.setActionId(actionId);
             this.jobActionGroupService.updateActionGroup(job, actionId);
-            record = this.recordService.insertPendingReocrd(actionId, job);
+            record = this.recordService.insertPendingReocrd(actionId, job,Opencron.RunStatus.PENDING);
             job.setRecordId(record.getRecordId());
         }
 
         try {
 
-            this.executeService.executeJob(job,true);
+            this.executeService.handleExecuteJob(job,true);
         } catch (Exception e) {
             e.printStackTrace();
         }

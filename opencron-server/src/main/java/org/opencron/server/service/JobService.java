@@ -637,7 +637,7 @@ public class JobService {
     public void initRootPendingJob(JobVo job, Long actionId) {
         if(job.getGroupId()==null){
             logger.info("inset action:{} no group job:{}",actionId,job.getJobName());
-            this.recordService.insertPendingReocrd(actionId,job);
+            this.recordService.insertPendingReocrd(actionId,job, RunStatus.PENDING);
             return;
         }
         //初始化Task记录
@@ -648,8 +648,13 @@ public class JobService {
             if(job.getGroupId()!=null){
                 List<JobVo> rootJobList=this.loadRootJobByGroupId(job.getGroupId());
                 for(JobVo rootJob:rootJobList){
-                    logger.info("insert job:{},actionId:{} status:pending ",rootJob.getJobName(),actionId);
-                    this.recordService.insertPendingReocrd(actionId,rootJob);
+                    if(job.getJobId().equals(rootJob.getJobId())){
+                        logger.info("insert job:{},actionId:{} status:pending ",rootJob.getJobName(),actionId);
+                        this.recordService.insertPendingReocrd(actionId,rootJob, RunStatus.PENDING);
+                    }else {
+                        this.recordService.insertPendingReocrd(actionId,rootJob, RunStatus.QUARTATRI);
+                    }
+
                 }
             }else{
                 logger.info("action:{} job:{} no groupId ",actionId,job.getJobName());
@@ -695,6 +700,12 @@ public class JobService {
         return this.queryDao.sqlQuery(Job.class,sql,groupId);
     }
 
+    public Long loadRootJobByGroupIdCount(Long groupId) {
+        String sql="SELECT count(*) FROM `t_job` tj " +
+                "WHERE tj.`deleted`=0 AND tj.`groupId`=? and tj.`flowNum`=0";
+        return this.queryDao.getCountBySql(sql,groupId);
+    }
+
     public void batchIinitJob(List<Job> jobVos) {
         for(Job vo:jobVos){
             Job merge = this.merge(vo);
@@ -702,4 +713,6 @@ public class JobService {
             logger.info("insert into job:{} name:{} success!",vo.getJobId(),vo.getJobName());
         }
     }
+
+
 }

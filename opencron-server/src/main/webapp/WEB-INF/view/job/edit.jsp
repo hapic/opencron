@@ -162,15 +162,8 @@
                         <i class="glyphicon glyphicon-tasks"></i>&nbsp;&nbsp;权重&nbsp;&nbsp;<b>*&nbsp;</b></label>
                     <div class="col-md-10">
                         <select class="multiselect" title="jobGroupList" id="weight" name="weight">
-                            <c:set var="weigthSet" value="false"/>
                             <c:forEach var="i" begin="0" end="5" step="1">
-                                <c:if test="${weight==i}">
-                                    <option value="${i}" selected>${i}</option>
-                                    <c:set var="weigthSet" value="true"/>
-                                </c:if>
-                                <c:if test="${ weigthSet==false}">
-                                    <option value="${i}">${i}</option>
-                                </c:if>
+                                <option value="${i}" ${i eq job.weight ? 'selected' : '22'}>${i}</option>
                             </c:forEach>
                         </select>
                     </div>

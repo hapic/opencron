@@ -109,7 +109,7 @@ public class ExecuteService implements Job {
      * 基本方式执行任务，按任务类型区分
      */
     public boolean executeJob(final JobVo job,boolean initChildJob) {
-        Long actionId= null;
+        Long actionId= job.getActionId();
 
         try {
             if(job.getFlowNum()==0){//如果是根节点则还没有对应的actionID,需要申请个actionId
@@ -131,10 +131,6 @@ public class ExecuteService implements Job {
                     lock.unlock();
                 }
             }
-
-            if(job.getExecType().equals(Opencron.ExecType.OPERATOR.getStatus())){//如果是手动重跑模式
-                handleExecuteJob(job,true);//手动触发
-            }
         } catch (Exception e) {
             logger.error(" error:{}",e.getMessage());
         }
@@ -143,7 +139,7 @@ public class ExecuteService implements Job {
         return executeJob(job,actionId,initChildJob);
     }
 
-    private void handleExecuteJob(JobVo job,boolean initChildJob) {
+    public void handleExecuteJob(JobVo job,boolean initChildJob) {
         Long actionId=null;
 
         if(job.getRecordId()!=null){
@@ -151,22 +147,24 @@ public class ExecuteService implements Job {
             actionId=record.getActionId();
             logger.info("load job:{} old record:{} status:{} actionId:{}",job.getJobName(),record.getRecordId(),record.getStatus(),actionId);
             this.recordService.updateOldRecorAndInsertNewRecord(record, job);//修改老的记录，插入新的记录
+            this.executeJob(job,true);
 
             //获取当前job下的
-            if(initChildJob){
+            /*if(initChildJob){
                 Long jobId = job.getJobId();
                 List<JobVo> jobVos = jobDependenceService.childsNodeJob(jobId);
                 for(JobVo childJob:jobVos){
                     childJob.setParam(job.getParam());
+                    childJob.setActionId(actionId);
                     Record oldRecord = this.recordService.loadLastRecord(actionId, childJob.getJobId());
                     if(oldRecord!=null){
                         logger.info("update old record:{} to redo! ",oldRecord.getRecordId());
-                        this.recordService.updateOldRecorAndInsertNewRecord(record, job);//修改老的记录，插入新的记录
+                        this.recordService.updateOldRecorAndInsertNewRecord(oldRecord, childJob);//修改老的记录，插入新的记录
                     }else{
                         this.recordService.insertRecord(childJob,RunStatus.PENDING);
                     }
                 }
-            }
+            }*/
         }
     }
 
@@ -235,7 +233,7 @@ public class ExecuteService implements Job {
         }
         if(job.getFlowNum()>0 || job.getLastChild()){
             //清理相关的记录
-            this.jobGroupService.clearActionId(actionId);
+            this.clearGroupActionId(job.getGroupId(),actionId);
         }
 
 
@@ -251,7 +249,12 @@ public class ExecuteService implements Job {
             logger.info("actionId:{} currintRunning count is:{}",actionId,runningCount);
             aContinue= concurrencyControl.isContinue(runningCount);
             if(!aContinue){
-                Record record = this.recordService.insertPendingReocrd(actionId, job);
+                Record record = this.recordService.insertPendingReocrd(actionId, job, RunStatus.PENDING);
+                if(record.getStatus().equals(RunStatus.QUARTATRI.getStatus())){//如果已经保存过
+                    record.setStatus(RunStatus.PENDING.getStatus());
+                    logger.info("update record:{} to pending",record.getRecordId());
+                    this.recordService.merge(record);
+                }
                 logger.info("actionId:{} job:{} reach the line {} currentRunnint:{},save Redord:{}",actionId, job.getJobName(),concurrencyControl.getMaxRunning(),concurrencyControl.getCurrent(),record.getRecordId());
                 return false;
             }
@@ -265,6 +268,17 @@ public class ExecuteService implements Job {
             }
         }
         return b;
+    }
+
+    private void clearGroupActionId(Long groupId, Long actionId) {
+
+        Long rootJob=this.jobService.loadRootJobByGroupIdCount(groupId);
+        Long doneCount=this.recordService.loadRootDoneCount(actionId);
+        logger.info("groupId:{} root count:{},actionId:{} done Count:{}",groupId,rootJob,actionId,doneCount);
+        if(rootJob-doneCount!=0){
+            return;
+        }
+        this.jobGroupService.clearActionId(actionId);
     }
 
 
@@ -401,8 +415,14 @@ public class ExecuteService implements Job {
             logger.info("job:{} pause,record:{} pause",job.getJobName(),record.getRecordId());
             return false;
         }
-
-        int i = this.recordService.updateRecordRequiresNew(record.getRecordId(), RunStatus.PENDING.getStatus(), RunStatus.RUNNING.getStatus());
+        int i =0;
+        if(record.getStatus().equals(RunStatus.QUARTATRI.getStatus())){
+            i=this.recordService.updateRecordRequiresNew(record.getRecordId(), RunStatus.QUARTATRI.getStatus(), RunStatus.RUNNING.getStatus());
+        }else if(record.getStatus().equals(RunStatus.PENDING.getStatus())){
+            i=this.recordService.updateRecordRequiresNew(record.getRecordId(), RunStatus.PENDING.getStatus(), RunStatus.RUNNING.getStatus());
+        }else if(record.getStatus().equals(RunStatus.STOPED.getStatus())){
+            i=this.recordService.updateRecordRequiresNew(record.getRecordId(), RunStatus.STOPED.getStatus(), RunStatus.RUNNING.getStatus());
+        }
         if(i<1){
             logger.info("record:{}  update {} by other thread already!",record.getRecordId(),RunStatus.RUNNING.getStatus());
             return false;
@@ -432,7 +452,6 @@ public class ExecuteService implements Job {
                 //被kill,直接退出
                 if (StatusCode.KILL.getValue().equals(result.getExitCode())) {
                     recordService.flowJobDone(record);
-
                 } else {
                     success = false;
                 }
@@ -441,6 +460,7 @@ public class ExecuteService implements Job {
                 recordService.merge(record);
                 String param = ParamUntils.param(record.getCommand());
                 job.setParam(param);
+                job.setExecType(record.getExecType());//触发方式
                 if(initChildJob){
                     initChildJob(actionId,job);//初始化所有任务的子任务
                 }
@@ -511,14 +531,19 @@ public class ExecuteService implements Job {
             for(JobVo childJob:childeJobs){
                 try {
                     childJob.setParam(inputParam);
-                    Record pendingRecord = recordService.insertPendingReocrd(actionId,childJob);//加载下级任务的执行状态
-//                    if(job.getRecordId()!=null){//如果是重新执行的，的重新初始化
-//                        pendingRecord.setStatus(RunStatus.REDO.getStatus());
-//                        this.recordService.merge(pendingRecord);
-//                        childJob.setRecordId(pendingRecord.getRecordId());
-//                        Record record = recordService.insertRecord(childJob, RunStatus.PENDING);
-//                        logger.info("update old record:{} and insert int:{}",pendingRecord.getRecordId(),record.getRecordId());
-//                    }else
+
+                    childJob.setExecType(job.getExecType());//设置执行方式
+                    Record pendingRecord = recordService.insertPendingReocrd(actionId,childJob, RunStatus.PENDING);//加载下级任务的执行状态
+
+                    //如果是手动触发，则原先已经做过的任务进行重做
+                    if(job.getExecType().equals(ExecType.OPERATOR.getStatus())){//如果是手动触发
+                        if(pendingRecord.getStatus().equals(RunStatus.DONE.getStatus())
+                                || pendingRecord.getStatus().equals(RunStatus.STOPED.getStatus())
+                                || pendingRecord.getStatus().equals(RunStatus.REDO.getStatus())){
+                            logger.info("redo job:{},recordId:{}",childJob.getJobName(),pendingRecord.getRecordId());
+                            recordService.updateOldRecorAndInsertNewRecord(pendingRecord,childJob);
+                        }
+                    }
                     logger.info("job:{} child insert  into recordId:{}  ",job.getJobName(),pendingRecord.getRecordId());
                 } catch (Exception e) {
                     DBException.business(e,"UK_UNIQUECODE");
@@ -754,7 +779,8 @@ public class ExecuteService implements Job {
             recordQueue.add(record);
         } else if (JobType.FLOW.getCode().equals(record.getJobType())) {
             //流程任务
-            recordQueue.addAll(recordService.getRunningFlowJob(record.getRecordId()));
+//            recordQueue.addAll(recordService.getRunningFlowJob(record.getRecordId()));
+            recordQueue.add(record);
         }
 
         final List<Boolean> result = new ArrayList<Boolean>(0);

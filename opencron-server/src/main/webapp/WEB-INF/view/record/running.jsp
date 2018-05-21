@@ -19,7 +19,7 @@
                 $.ajax({
                     headers:{"csrf":"${csrf}"},
                     type:"POST",
-                    url:"${contextPath}/record/refresh.htm",
+                    url:"${contextPath}/record/refresh.htm?csrf=${csrf}",
                     data:{
                         "size":"${size}",
                         "queryTime":"${queryTime}",
@@ -28,6 +28,7 @@
                         "status":"${status}",
                         "execType":"${execType}",
                         "pageNo":${pageBean.pageNo},
+                        "csrf":'${csrf}',
                         "pageSize":${pageBean.pageSize}
                     },
                     dataType:"html",

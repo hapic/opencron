@@ -300,7 +300,8 @@ public class RecordService {
      * @return
      */
     public List<Record> getRunningFlowJob(Long recordId) {
-        String sql = "SELECT R.* FROM T_RECORD AS R INNER JOIN (SELECT actionId FROM T_RECORD WHERE recordId=?) AS T WHERE R.actionId = T.actionId";
+        String sql = "SELECT R.* FROM T_RECORD AS R INNER JOIN (SELECT actionId FROM T_RECORD WHERE recordId=?) AS T " +
+                "WHERE R.actionId = T.actionId and R.status in (0,7)";
         return queryDao.sqlQuery(Record.class, sql, recordId);
     }
 
@@ -405,7 +406,7 @@ public class RecordService {
      * @param jobVo
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Record insertPendingReocrd(Long actionId,JobVo jobVo) {
+    public Record insertPendingReocrd(Long actionId,JobVo jobVo,Opencron.RunStatus runStatus) {
         jobVo.setActionId(actionId);
         //先判断是否已经保存过了
         Record record = this.getRecord(actionId, jobVo);
@@ -415,7 +416,7 @@ public class RecordService {
             log.info("job:{} record:{} has exits!",jobVo.getJobName(),record.getRecordId());
             return record;
         }
-        record=insertRecord(jobVo,Opencron.RunStatus.PENDING);
+        record=insertRecord(jobVo,runStatus);
 
         return record;
     }
@@ -434,6 +435,7 @@ public class RecordService {
             record.setStatus(status.getStatus());//默认待执行
             record.setGroupId(childJob.getGroupId());
             record.setActionId(actionId);
+            record.setParentId(childJob.getRecordId());
             record.setJobType(childJob.getJobType());
 
             if(StringUtils.isNullString(childJob.getParam())){
@@ -540,7 +542,9 @@ public class RecordService {
         record.setStatus(Opencron.RunStatus.RERUNDONE.getStatus());//设置状态为重做
         this.merge(record);//修改当前状态为重做
 
+        job.setRecordId(record.getRecordId());
         Record newRecord = insertRecord(job, Opencron.RunStatus.PENDING);
+
         Long recordId = newRecord.getRecordId();
         job.setRecordId(recordId);
         log.info("insert record:{} from record:{}",newRecord.getRecordId(),record.getRecordId());
@@ -556,5 +560,12 @@ public class RecordService {
                 "ORDER BY recordId DESC " +
                 "LIMIT 1";
         return this.queryDao.sqlUniqueQuery(Record.class,sql,jobId);
+    }
+
+    public Long loadRootDoneCount(Long actionId) {
+        String sql="SELECT COUNT(tr.`recordId`)  " +
+                " FROM t_record tr " +
+                " WHERE tr.`actionId`=? AND tr.`flowNum`=0 AND tr.`status`=1";
+        return this.queryDao.getCountBySql(sql,actionId);
     }
 }
