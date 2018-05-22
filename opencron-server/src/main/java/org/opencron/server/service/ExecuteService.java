@@ -770,18 +770,18 @@ public class ExecuteService implements Job {
     /**
      * 终止任务过程
      */
-    public boolean killJob(Record record) {
+    public boolean killJob(List<Record> records) {
 
         final Queue<Record> recordQueue = new LinkedBlockingQueue<Record>();
 
         //单一任务
-        if (JobType.SINGLETON.getCode().equals(record.getJobType())) {
-            recordQueue.add(record);
-        } else if (JobType.FLOW.getCode().equals(record.getJobType())) {
-            //流程任务
-//            recordQueue.addAll(recordService.getRunningFlowJob(record.getRecordId()));
-            recordQueue.add(record);
-        }
+//        if (JobType.SINGLETON.getCode().equals(record.getJobType())) {
+//            recordQueue.add(record);
+//        } else if (JobType.FLOW.getCode().equals(record.getJobType())) {
+//            //流程任务
+////            recordQueue.addAll(recordService.getRunningFlowJob(record.getRecordId()));
+            recordQueue.addAll(records);
+//        }
 
         final List<Boolean> result = new ArrayList<Boolean>(0);
 
@@ -789,7 +789,7 @@ public class ExecuteService implements Job {
         ExecutorService exec = Executors.newCachedThreadPool();
 
         for (final Record cord : recordQueue) {
-            record.setUniqueCode(null);
+            cord.setUniqueCode(null);
             Runnable task = new Runnable() {
                 @Override
                 public void run() {

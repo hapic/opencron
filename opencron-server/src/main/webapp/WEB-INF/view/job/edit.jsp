@@ -163,7 +163,7 @@
                     <div class="col-md-10">
                         <select class="multiselect" title="jobGroupList" id="weight" name="weight">
                             <c:forEach var="i" begin="0" end="5" step="1">
-                                <option value="${i}" ${i eq job.weight ? 'selected' : '22'}>${i}</option>
+                                <option value="${i}" ${i eq job.weight ? 'selected' : ''}>${i}</option>
                             </c:forEach>
                         </select>
                     </div>

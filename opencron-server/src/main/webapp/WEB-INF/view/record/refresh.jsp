@@ -12,7 +12,10 @@
 
 <c:forEach var="r" items="${pageBean.result}" varStatus="index">
     <tr>
-        <td>${r.groupId}</td>
+        <td>
+            <input type="checkbox" name="killRecordId" id="killRecordId-${r.recordId}" value="${r.recordId}"/>
+                ${r.groupId}
+        </td>
         <td>
             <c:if test="${empty r.jobName}">batchJob</c:if>
             <c:if test="${!empty r.jobName}">
@@ -61,17 +64,36 @@
         <td><center>
             <div class="visible-md visible-lg hidden-sm hidden-xs action-buttons">
                 <a href="#" onclick="killJob('${r.recordId}')" title="kill">
-                    <i class="glyphicon glyphicon-stop"></i>
+                    <i class="glyphicon glyphicon-off"></i>
                 </a>&nbsp;&nbsp;
 
-                <c:if test="${r.status ne 4}">
+               <%-- <c:if test="${r.status ne 4}">
                     <a href="#" onclick="restartJob('${r.recordId}','${r.jobId}')" title="结束并重启">
                         <i class="glyphicon glyphicon-refresh"></i>
                     </a>&nbsp;&nbsp;
-                </c:if>
+                </c:if>--%>
 
             </div>
         </center>
         </td>
     </tr>
 </c:forEach>
+<script>
+    $("#checkAll").iCheck('uncheck');
+    $('#tableContent input[type="checkbox"]').iCheck({
+        handle : 'checkbox',
+        checkboxClass : 'icheckbox_minimal'
+    });
+
+    $('input[name="killRecordId"]').on("ifChanged",function (event) {
+        //当选中的个数和所有复选框的个数相同，则选中全选按钮
+        var allCheckLength=$('input[name="killRecordId"]').length;
+        var checkedLenth=$('input[name="killRecordId"]:checked').length;
+        if(allCheckLength==checkedLenth){
+            $("#checkAll").iCheck('check');
+        }else{
+            $("#checkAll").iCheck('uncheck');
+        }
+
+    } );
+</script>

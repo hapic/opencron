@@ -51,7 +51,7 @@ public class DoPendingRunnable implements Runnable {
     @Override
     public void run() {
         int offSet=Integer.MAX_VALUE;
-        int limit=100;
+        int limit=1000;
 
         while (true){
 
@@ -64,8 +64,8 @@ public class DoPendingRunnable implements Runnable {
                     judgeMaxRunnint();
                     log.info("do pending job record:{} actionId:{}",record.getRecordId(),record.getActionId());
 
-                    offSet=Math.min(record.getRecordId().intValue(),offSet);
-                    log.info("next offset:{}",offSet);
+//                    offSet=Math.min(record.getRecordId().intValue(),offSet);
+//                    log.info("next offset:{}",offSet);
 
                     final JobVo jobVo = jobService.getJobVoById(record.getJobId());
                     jobVo.setAgent(agentService.getAgent(jobVo.getAgentId()));

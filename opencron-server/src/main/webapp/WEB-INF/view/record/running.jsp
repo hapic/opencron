@@ -10,6 +10,19 @@
     <script type="text/javascript">
         $(document).ready(function() {
 
+            $('#checkAll').on('ifClicked', checkAll);
+            $('input[name="killRecordId"]').on("ifChanged",function (event) {
+                //当选中的个数和所有复选框的个数相同，则选中全选按钮
+                var allCheckLength=$('input[name="killRecordId"]').length;
+                var checkedLenth=$('input[name="killRecordId"]:checked').length;
+                if(allCheckLength==checkedLenth){
+                    $("#checkAll").iCheck('check');
+                }else{
+                    $("#checkAll").iCheck('uncheck');
+                }
+
+            } );
+
             setInterval(function(){
 
                 $("#highlight").fadeOut(3000,function(){
@@ -41,7 +54,7 @@
                         }
                     }
                 });
-            },5000);
+            },1000*20);
 
             $("#size").change(function(){doUrl();});
             $("#agentId").change(function(){doUrl();});
@@ -60,6 +73,15 @@
         }
 
         function killJob(id){
+
+            //先选中这个
+            $("#killRecordId-"+id).iCheck('check');
+
+            var checkBoxArr = [];
+            $('input[name="killRecordId"]:checked').each(function() {
+                checkBoxArr.push($(this).val());
+            });
+
             swal({
                 title: "",
                 text: "您确定要结束这个作业吗？",
@@ -68,12 +90,16 @@
                 closeOnConfirm: false,
                 confirmButtonText: "结束",
             }, function() {
-                $("#process_"+id).html("停止中");
+                $.each(checkBoxArr,function (a,b) {
+                    $("#process_"+b).html("停止中");
+                });
+
                 $.ajax({
                     headers:{"csrf":"${csrf}"},
+                    traditional:true,
                     type:"POST",
                     url:"${contextPath}/record/kill.do",
-                    data:{"recordId":id}
+                    data:{"recordIds":checkBoxArr}
                 });
                 alertMsg("结束请求已发送");
             });
@@ -103,12 +129,29 @@
                                 url:"${contextPath}/job/execute.do",
                                 data:{"id":jobId,"recordId":id}
                             });
+
+                            $("#checkAll").iCheck('uncheck');
                         }
                     }
                 });
                 alertMsg( "该作业已重启,正在执行中.");
             });
 
+        }
+
+        function checkAll() {
+            var all=document.getElementById('checkAll');//获取到点击全选的那个复选框的id
+            var one=document.getElementsByName('killRecordId');//获取到复选框的名称
+            if(all.checked==false){//因为获得的是数组，所以要循环 为每一个checked赋值
+                for(var i=0;i<one.length;i++){
+                    $(one[i]).iCheck('check');
+                }
+
+            }else{
+                for(var j=0;j<one.length;j++){
+                    $(one[j]).iCheck('uncheck');
+                }
+            }
         }
 
     </script>
@@ -190,7 +233,8 @@
         <table class="table tile textured">
             <thead>
             <tr>
-                <th>所属组</th>
+                <th>
+                    <input type="checkbox" name="checkAll" id="checkAll" title="全选/反选"/>所属组</th>
                 <th>作业名称</th>
                 <th>执行器</th>
                 <th>运行状态</th>
@@ -207,7 +251,10 @@
 
             <c:forEach var="r" items="${pageBean.result}" varStatus="index">
                 <tr>
-                    <td>${r.groupId}</td>
+                    <td>
+                        <input type="checkbox" name="killRecordId" id="killRecordId-${r.recordId}" value="${r.recordId}"/>
+                            ${r.groupId}
+                    </td>
                     <td>
                         <c:if test="${empty r.jobName}">batchJob</c:if>
                         <c:if test="${!empty r.jobName}">
@@ -258,14 +305,14 @@
                     <td><center>
                         <div class="visible-md visible-lg hidden-sm hidden-xs action-buttons">
                             <a href="#" onclick="killJob('${r.recordId}')" title="kill">
-                                <i class="glyphicon glyphicon-stop"></i>
+                                <i class="glyphicon glyphicon-off"></i>
                             </a>&nbsp;&nbsp;
 
-                        <c:if test="${r.status ne 4}">
+                       <%-- <c:if test="${r.status ne 4}">
                             <a href="#" onclick="restartJob('${r.recordId}','${r.jobId}')" title="结束并重启">
                                 <i class="glyphicon glyphicon-refresh"></i>
                             </a>&nbsp;&nbsp;
-                        </c:if>
+                        </c:if>--%>
 
                         </div>
                     </center>

@@ -213,19 +213,19 @@ public class JobDependenceService {
 
         sb.append("FROM t_job tj   " )
                 .append(
-        "LEFT JOIN (SELECT jd.`dependenceJobId`,jd.`jobId` FROM t_job_dependence jd WHERE jd.`status`=1) tjd  " +
+        "LEFT JOIN (SELECT jd.`dependenceJobId`,jd.`jobId` FROM t_job_dependence jd WHERE jd.`status`=1 AND jd.`groupId`=?) tjd  " +
         "ON tj.`jobId`=tjd.`jobId`  " );
         if(actionId!=null){
-            sb.append( "LEFT JOIN (SELECT * FROM `t_record` tr " +
+            sb.append( "LEFT JOIN (SELECT tr.`recordId`,tr.`actionId`,tr.`jobId`,tr.`status`,tr.`success`  FROM `t_record` tr " +
                     "WHERE  EXISTS ( " +
                     "SELECT MAX(B.recordId) AS rid  FROM `t_record` B " +
-                    "WHERE B.`actionId`= " +actionId+" "+
+                    "WHERE B.`actionId`= ? "+
                     "GROUP BY B.`jobId`  " +
                     "HAVING  rid=tr.`recordId` " +
-                    ") )  tr ON tr.`jobId`=tj.`jobId`  ");
+                    ") AND tr.actionId=? )  tr ON tr.`jobId`=tj.`jobId`  ");
         }
         sb.append(" WHERE tj.`groupId`=? AND tj.`deleted`=0  ");
 
-        return this.queryDao.sqlQuery(JobVo.class,sb.toString(),groupId);
+        return this.queryDao.sqlQuery(JobVo.class,sb.toString(),groupId,actionId,actionId,groupId);
     }
 }

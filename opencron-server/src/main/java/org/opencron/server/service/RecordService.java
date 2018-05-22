@@ -463,9 +463,9 @@ public class RecordService {
         String sql="SELECT R.*,D.ip,D.`name` AS agentName,D.password FROM T_RECORD AS R  " +
                 "INNER JOIN T_AGENT AS D  " +
                 "ON R.agentId = D.agentId  " +
-                "WHERE R.status=7 AND recordId<? " +
+                "WHERE R.status=7 " +//AND recordId<?
                 "ORDER BY R.`weight` DESC,R.flowNum DESC, R.recordId DESC LIMIT ?";
-        return this.queryDao.sqlQuery(Record.class,sql,offSet,limit);
+        return this.queryDao.sqlQuery(Record.class,sql,limit);
     }
 
     /**
@@ -567,5 +567,21 @@ public class RecordService {
                 " FROM t_record tr " +
                 " WHERE tr.`actionId`=? AND tr.`flowNum`=0 AND tr.`status`=1";
         return this.queryDao.getCountBySql(sql,actionId);
+    }
+
+    public List<Record> loadRecord(Long[] recordIds) {
+        String sql="SELECT * FROM `t_record` tr " +
+                "WHERE tr.`recordId` IN (";
+        for(int i=0;i<recordIds.length;i++){
+            if(i==recordIds.length-1){
+                sql+="?";
+            }else{
+                sql+="?,";
+            }
+        }
+        sql+=")";
+        return  this.queryDao.sqlQuery(Record.class,sql,recordIds);
+
+
     }
 }

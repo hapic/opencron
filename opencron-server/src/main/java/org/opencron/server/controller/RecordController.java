@@ -23,6 +23,8 @@ package org.opencron.server.controller;
 
 import javax.servlet.http.HttpSession;
 
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.opencron.common.job.Opencron;
 import org.opencron.server.domain.JobGroup;
 import org.opencron.server.domain.Record;
@@ -43,6 +45,7 @@ import static org.opencron.common.utils.CommonUtils.notEmpty;
 
 @Controller
 @RequestMapping("record")
+@Slf4j
 public class RecordController extends BaseController {
 
     @Autowired
@@ -159,18 +162,30 @@ public class RecordController extends BaseController {
 
     @RequestMapping(value = "kill.do",method= RequestMethod.POST)
     @ResponseBody
-    public boolean kill(HttpSession session, Long recordId) {
-        Record record = recordService.get(recordId);
-        if (Opencron.RunStatus.RERUNNING.getStatus().equals(record.getStatus())) {
-            //父记录临时改为停止中
-            record.setStatus(Opencron.RunStatus.STOPPING.getStatus());
-            record.setUniqueCode(null);
-            recordService.merge(record);
-            //得到当前正在重跑的子记录
-            record = recordService.getReRunningSubJob(record.getActionId());
+    public boolean kill(HttpSession session, Long[] recordIds) {
+        try {
+            if(recordIds!=null &&  recordIds.length>0){
+                for(Long recordId:recordIds){
+                    Record record = recordService.get(recordId);
+                    if (Opencron.RunStatus.RERUNNING.getStatus().equals(record.getStatus())) {
+                        //父记录临时改为停止中
+                        record.setStatus(Opencron.RunStatus.STOPPING.getStatus());
+                        record.setUniqueCode(null);
+                        recordService.merge(record);
+                        //得到当前正在重跑的子记录
+                        record = recordService.getReRunningSubJob(record.getActionId());
+                    }
+                    if (!jobService.checkJobOwner(session, record.getUserId())) return false;
+                }
+
+                List<Record> records=recordService.loadRecord(recordIds);
+                boolean b = executeService.killJob(records);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        if (!jobService.checkJobOwner(session, record.getUserId())) return false;
-        return executeService.killJob(record);
+        return true;
     }
 
 }

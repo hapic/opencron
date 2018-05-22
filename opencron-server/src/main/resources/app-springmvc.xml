@@ -41,6 +41,10 @@
 
     <mvc:interceptors>
         <mvc:interceptor>
+            <mvc:mapping path="*.do" />
+            <bean class="org.opencron.server.handler.OperatorLogInterceptor" />
+        </mvc:interceptor>
+        <mvc:interceptor>
             <mvc:mapping path="/**" />
             <bean class="org.opencron.server.handler.SecurityHandlerInterceptor" />
         </mvc:interceptor>
