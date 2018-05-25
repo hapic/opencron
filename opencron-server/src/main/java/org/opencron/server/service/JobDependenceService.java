@@ -219,13 +219,13 @@ public class JobDependenceService {
             sb.append( "LEFT JOIN (SELECT tr.`recordId`,tr.`actionId`,tr.`jobId`,tr.`status`,tr.`success`  FROM `t_record` tr " +
                     "WHERE  EXISTS ( " +
                     "SELECT MAX(B.recordId) AS rid  FROM `t_record` B " +
-                    "WHERE B.`actionId`= ? "+
+                    "WHERE B.`actionId`="+actionId+" "+
                     "GROUP BY B.`jobId`  " +
                     "HAVING  rid=tr.`recordId` " +
-                    ") AND tr.actionId=? )  tr ON tr.`jobId`=tj.`jobId`  ");
+                    ") AND tr.actionId="+actionId+" )  tr ON tr.`jobId`=tj.`jobId`  ");
         }
         sb.append(" WHERE tj.`groupId`=? AND tj.`deleted`=0  ");
 
-        return this.queryDao.sqlQuery(JobVo.class,sb.toString(),groupId,actionId,actionId,groupId);
+        return this.queryDao.sqlQuery(JobVo.class,sb.toString(),groupId,groupId);
     }
 }

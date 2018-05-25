@@ -78,8 +78,6 @@ public class ClearJobRecordRunnable implements Runnable {
                         CommonLock.reomve(actionId+"");
                         log.info("remove lock {} ",actionId);
                     }
-
-
                 }
                 jobActionGroups = jobActionGroupService.loadRunningGroup(offSet,limit);
             }

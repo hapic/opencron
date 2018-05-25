@@ -23,13 +23,17 @@
 package org.opencron.server.job;
 
 import org.opencron.common.job.Opencron;
+import org.opencron.common.utils.AlarmCache;
 import org.opencron.common.utils.CommonUtils;
 import org.opencron.common.utils.DateUtils;
 import org.opencron.server.alarm.AlarmNoticeFacory;
 import org.opencron.server.alarm.AlarmTypes;
 import org.opencron.server.alarm.MsgTemplet;
+import org.opencron.server.domain.JobActionGroup;
+import org.opencron.server.domain.JobGroup;
 import org.opencron.server.domain.Record;
 import org.opencron.server.service.*;
+import org.opencron.server.vo.JobActionGroupVo;
 import org.opencron.server.vo.JobVo;
 import org.opencron.server.vo.RecordVo;
 import org.slf4j.Logger;
@@ -74,6 +78,9 @@ public class OpencronTask implements InitializingBean {
     @Autowired
     private ConcurrencyControl concurrencyControl;
 
+    @Autowired
+    private JobActionGroupService jobActionGroupService;
+
     @Override
     public void afterPropertiesSet() throws Exception {
         configService.initDataBase();
@@ -117,9 +124,9 @@ public class OpencronTask implements InitializingBean {
     /**
      * 任务超时未完成告警
      */
-//    @Scheduled(cron = "0 0/5 * * * ?")
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void unfinishedAlarm() {
-            //加载超时(30m)未完成的
+            //加载超时(3h)未完成的
         String beforeTime= DateUtils.beforeTime(3*60);
         List<RecordVo> records =recordService.loadUnfinishedRecord(beforeTime);
         if (CommonUtils.notEmpty(records)) {
@@ -131,6 +138,27 @@ public class OpencronTask implements InitializingBean {
 
                 AlarmNoticeFacory.sendMsg(null,timeOutUnfinishedMsg, AlarmTypes.DINGDING);
             }
+        }
+    }
+
+    //完成后的消息通知
+    @Scheduled(cron = "0 0/10 * * * ?")
+    public void finishedAlarm() {
+        String beginTimeCurDay = DateUtils.getBeginTimeCurDayTime();
+        String endTimeCurDay = DateUtils.getEndTimeCurDayTime();
+
+        List<JobActionGroupVo> jobActionGroups =
+                jobActionGroupService.loadFinishedGroup(beginTimeCurDay, endTimeCurDay);
+        for(JobActionGroupVo jag:jobActionGroups){
+
+            String groupFinishedMsg =
+                    MsgTemplet.getGroupFinishedMsg(jag.getGroupName());
+
+            AlarmNoticeFacory.sendMsg(null,groupFinishedMsg, AlarmTypes.DINGDING);
+
+            logger.info("send msg group:{} msg",jag.getGroupName());
+            int i=jobActionGroupService.updateActionGroupAlarm(jag.getId(),jag.getAlarm(),1);
+            logger.info("update ActionGroupStatus:{},result:{}",jag.getId(),i);
         }
     }
 

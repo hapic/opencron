@@ -29,6 +29,16 @@ public class JobActionGroup {
     private Date startTime;//当前小组在开始时间
     private Date endateTime;//当前小组在结束时间
 
+    private Integer alarm=0;//是否已经通知
+
+
+    public Integer getAlarm() {
+        return alarm;
+    }
+
+    public void setAlarm(Integer alarm) {
+        this.alarm = alarm;
+    }
 
     public Long getActionId() {
         return actionId;

@@ -7,6 +7,7 @@ package org.opencron.common.utils;
  * @version V1.0
  */
 
+import java.math.BigInteger;
 import java.util.Date;
 
 /**
@@ -21,13 +22,17 @@ public class ParamUntils {
     public static String command(String command,Date date){
         String[] split = command.split(" ");
         StringBuffer sb= new StringBuffer();
-        for(String cmd:split){
-            if(cmd.startsWith("$")){
-               String value= replace(cmd,date);
+        for(int i=0;i<split.length;i++){
+            if(split[i].startsWith("$")){
+                String value= replace(split[i],date);
                 sb.append(" "+value);
-            }else{
-                sb.append(" "+cmd);
+            }else if(i==0){
+                sb.append(split[i]);
             }
+        }
+
+        if(sb.length()<1){
+            return command;
         }
         return sb.toString();
     }
@@ -75,7 +80,7 @@ public class ParamUntils {
      */
     public static String param(String command){
         if(command.indexOf(" ")==-1){
-            return command;
+            return null;
         }
         StringBuffer sb= new StringBuffer(command);
         return sb.substring(sb.indexOf(" ")).trim();
@@ -83,10 +88,12 @@ public class ParamUntils {
 
     public static void main(String[] args) {
 
-        String cmd="date;sleep 30s;";
-        String command = ParamUntils.command(cmd,"2018-03-12");
+        String cmd="date;";
+        String command = ParamUntils.command(cmd," ");
 //        String parma = param("/ab/c/c.sh 18273 232");
         System.out.println(command);
+
+
     }
 
 

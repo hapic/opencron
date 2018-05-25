@@ -16,6 +16,7 @@ import org.opencron.server.DBException;
 import org.opencron.server.dao.QueryDao;
 import org.opencron.server.domain.JobActionGroup;
 import org.opencron.server.domain.JobGroup;
+import org.opencron.server.vo.JobActionGroupVo;
 import org.opencron.server.vo.JobVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -132,5 +133,19 @@ public class JobActionGroupService {
         String sql="SELECT ag.actionId FROM `t_job_action_group` ag " +
                 "WHERE ag.`groupId`=? ORDER BY id DESC LIMIT 1";
         return this.queryDao.getCountBySql(sql,groupId);
+    }
+
+    public List<JobActionGroupVo> loadFinishedGroup(String beginTime, String endTime) {
+        String sql="SELECT tjag.*,tjg.`name` groupName FROM `t_job_action_group` tjag,t_job_group tjg " +
+                "WHERE tjag.`startTime` BETWEEN ? AND ? " +
+                "AND tjag.`status`=1 AND tjag.`alarm`=0 AND tjg.`id`=tjag.`groupId`;";
+        return this.queryDao.sqlQuery(JobActionGroupVo.class,sql,beginTime,endTime);
+    }
+
+    public int updateActionGroupAlarm(Long id, int fromAlarm, int toAlarm) {
+        String sql="UPDATE `t_job_action_group` tjag " +
+                "SET tjag.`alarm`=? " +
+                "WHERE tjag.`alarm`=? AND tjag.`id`=?";
+        return this.queryDao.createSQLQuery(sql,toAlarm,fromAlarm,id).executeUpdate();
     }
 }

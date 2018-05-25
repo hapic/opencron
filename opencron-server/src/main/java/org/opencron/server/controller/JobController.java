@@ -566,8 +566,12 @@ public class JobController extends BaseController {
                 param=s;
             }
             record= this.recordService.loadLastRecord(id);
+        }else if(inputParam.startsWith("p=")){
+            String s = inputParam.replace("p=", "");
+            param=s;
         }
         job.setParam(param);
+        boolean isNew=false;
         if(record!=null ){//执行成功或失败的记录
             job.setRecordId(record.getRecordId());
             job.setActionId(record.getActionId());
@@ -577,11 +581,12 @@ public class JobController extends BaseController {
             this.jobActionGroupService.updateActionGroup(job, actionId);
             record = this.recordService.insertPendingReocrd(actionId, job,Opencron.RunStatus.PENDING);
             job.setRecordId(record.getRecordId());
+            isNew=true;
         }
 
         try {
 
-            this.executeService.handleExecuteJob(job,true);
+            this.executeService.handleExecuteJob(job,isNew);
         } catch (Exception e) {
             e.printStackTrace();
         }

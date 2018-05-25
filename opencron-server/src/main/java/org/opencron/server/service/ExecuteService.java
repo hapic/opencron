@@ -139,32 +139,17 @@ public class ExecuteService implements Job {
         return executeJob(job,actionId,initChildJob);
     }
 
-    public void handleExecuteJob(JobVo job,boolean initChildJob) {
+    public void handleExecuteJob(JobVo job,boolean isNew) {
         Long actionId=null;
 
         if(job.getRecordId()!=null){
             Record record = this.recordService.get(job.getRecordId());
             actionId=record.getActionId();
             logger.info("load job:{} old record:{} status:{} actionId:{}",job.getJobName(),record.getRecordId(),record.getStatus(),actionId);
-            this.recordService.updateOldRecorAndInsertNewRecord(record, job);//修改老的记录，插入新的记录
+            if(!isNew){
+                this.recordService.updateOldRecorAndInsertNewRecord(record, job);//修改老的记录，插入新的记录
+            }
             this.executeJob(job,true);
-
-            //获取当前job下的
-            /*if(initChildJob){
-                Long jobId = job.getJobId();
-                List<JobVo> jobVos = jobDependenceService.childsNodeJob(jobId);
-                for(JobVo childJob:jobVos){
-                    childJob.setParam(job.getParam());
-                    childJob.setActionId(actionId);
-                    Record oldRecord = this.recordService.loadLastRecord(actionId, childJob.getJobId());
-                    if(oldRecord!=null){
-                        logger.info("update old record:{} to redo! ",oldRecord.getRecordId());
-                        this.recordService.updateOldRecorAndInsertNewRecord(oldRecord, childJob);//修改老的记录，插入新的记录
-                    }else{
-                        this.recordService.insertRecord(childJob,RunStatus.PENDING);
-                    }
-                }
-            }*/
         }
     }
 
@@ -838,7 +823,7 @@ public class ExecuteService implements Job {
      */
     public Response responseToRecord(final JobVo job, final Record record) throws Exception {
         Response response = opencronCaller.call(Request.request(job.getIp(), job.getPort(), Action.EXECUTE, job.getPassword())
-                .putParam("command", job.getCommand())
+                .putParam("command", record.getCommand())
                 .putParam("pid", record.getPid())
                 .putParam("timeout", job.getTimeout() + "")
                 .putParam("runAs",job.getRunAs())

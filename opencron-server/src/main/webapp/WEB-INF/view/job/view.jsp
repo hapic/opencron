@@ -1054,6 +1054,7 @@
                     async:false,
                     success : function(json) {
                         var modules=[];
+                        modules.push({ key: "Lane2", text: "Lane2", isGroup: true, group: "Pool1", color: "lightgreen" });
                         var moduleshierarchy=[];
                         var strJob="-";
                         $.each(json, function(i, obj){
@@ -1072,6 +1073,7 @@
                             strJob+=obj.jobId+"-";
                             node["key"]=obj.jobId+"-"+timestamp;
                             node["name"]=obj.jobName;
+                            node["group"]='Lane2';
                             jobInfo.totalJob=jobInfo.totalJob+1;
                             if(obj.status==0){
                                 jobInfo.runnigJob=jobInfo.runnigJob+1;
@@ -1091,7 +1093,7 @@
                             modules.push(node);
                         });
                         if(moduleshierarchy.length>0){
-                            fillDiagramData("diagramDiv",modules,moduleshierarchy);
+                            fillDiagramData2("diagramDiv",modules,moduleshierarchy);
                         }else{
                             fillCycleDiagramData("diagramDiv",modules);
                         }
@@ -1108,7 +1110,7 @@
             <div class="col-md-12">
                 <!-- overview -->
                 <div class="tile " style="background: none">
-                    <div id="diagramDiv" style="height:600px"></div>
+                    <div id="diagramDiv" style="width:100%; height:700px;"></div>
 
 
                 </div>
