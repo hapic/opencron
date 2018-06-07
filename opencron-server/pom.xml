@@ -10,7 +10,7 @@
     <packaging>war</packaging>
     <name>opencron-server</name>
     <properties>
-            <app.web.name>opencron-server</app.web.name>
+            <app.web.name>ROOT</app.web.name>
     </properties>
     <dependencies>
         <dependency>

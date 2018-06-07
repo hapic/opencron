@@ -83,7 +83,11 @@ public class NoticeService {
         }
     }
 
+
     public void notice(JobVo job,String msg) {
+
+    }
+    public void notice2(JobVo job,String msg) {
         if (!job.getWarning()) return;
         Agent agent = job.getAgent();
         String message = "执行任务:" + job.getCommand() + "(" + job.getCronExp() + ")失败,%s!";

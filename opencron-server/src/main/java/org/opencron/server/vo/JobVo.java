@@ -23,6 +23,7 @@
 package org.opencron.server.vo;
 
 import org.opencron.common.job.Opencron;
+import org.opencron.server.domain.JobActionGroup;
 import org.opencron.server.domain.User;
 import org.opencron.server.domain.Agent;
 
@@ -109,6 +110,27 @@ public class JobVo implements Serializable {
 
     private Integer weight=0;
     private String param;
+
+    private Integer alarmCode;
+
+    private JobActionGroup actionGroup;
+
+
+    public JobActionGroup getActionGroup() {
+        return actionGroup;
+    }
+
+    public void setActionGroup(JobActionGroup actionGroup) {
+        this.actionGroup = actionGroup;
+    }
+
+    public Integer getAlarmCode() {
+        return alarmCode;
+    }
+
+    public void setAlarmCode(Integer alarmCode) {
+        this.alarmCode = alarmCode;
+    }
 
     public String getParam() {
         return param;

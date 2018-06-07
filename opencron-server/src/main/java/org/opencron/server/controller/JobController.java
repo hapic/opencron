@@ -27,10 +27,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.opencron.common.graph.KahnTopo;
 import org.opencron.common.graph.Node;
 import org.opencron.common.job.Opencron;
-import org.opencron.common.utils.CommonUtils;
-import org.opencron.common.utils.DigestUtils;
-import org.opencron.common.utils.ExecuteJobCache;
-import org.opencron.common.utils.StringUtils;
+import org.opencron.common.utils.*;
 import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.service.*;
@@ -213,7 +210,7 @@ public class JobController extends BaseController {
             jobVo.setRunAs("root");
             jobVo.setSuccessExit("0");
             jobVo.setTimeout(0);
-            jobVo.setWarning(false);
+            jobVo.setAlarmCode(0);
 
             String jobName = commant.substring(commant.lastIndexOf("/")+1);
             jobVo.setJobName(jobName);
@@ -239,7 +236,7 @@ public class JobController extends BaseController {
 
 
     @RequestMapping(value = "save.do",method= RequestMethod.POST)
-    public String save(HttpSession session, Job job,String[] dependenceid, HttpServletRequest request) throws SchedulerException {
+    public String save(HttpSession session, Job job,String[] dependenceid,Integer[] alarmCodes ,HttpServletRequest request) throws SchedulerException {
 
         job.setCommand(DigestUtils.passBase64(job.getCommand()));
         job.setDeleted(false);
@@ -247,6 +244,7 @@ public class JobController extends BaseController {
         job.setUserId(OpencronTools.getUserId(session));
         job.setUpdateTime(new Date());
         job.setLastChild(true);//默认未最后一个子节点
+        job.setAlarmCode(RightCode.code(alarmCodes));
         job.setJobType(Opencron.JobType.FLOW.getCode());
         String groupParam="";
         if(job.getGroupId()!=null && job.getGroupId()>0){
@@ -366,7 +364,7 @@ public class JobController extends BaseController {
     }
 
     @RequestMapping(value = "edit.do",method= RequestMethod.POST)
-    public String edit(HttpSession session,Job job,String[] dependenceid) throws SchedulerException {
+    public String edit(HttpSession session,Job job,String[] dependenceid,Integer[] alarmCodes) throws SchedulerException {
         Job dbJob = jobService.getJob(job.getJobId());
 
         String groupParam="";
@@ -386,13 +384,13 @@ public class JobController extends BaseController {
         dbJob.setSuccessExit(job.getSuccessExit());
         dbJob.setRedo(job.getRedo());
         dbJob.setRunCount(job.getRunCount());
-        dbJob.setWarning(job.getWarning());
+        dbJob.setAlarmCode(RightCode.code(alarmCodes));
         dbJob.setTimeout(job.getTimeout());
         dbJob.setWeight(job.getWeight());
-        if (dbJob.getWarning()) {
+        /*if (dbJob.getWarning()) {
             dbJob.setMobiles(job.getMobiles());
             dbJob.setEmailAddress(job.getEmailAddress());
-        }
+        }*/
         dbJob.setComment(job.getComment());
         dbJob.setUpdateTime(new Date());
 
@@ -575,11 +573,14 @@ public class JobController extends BaseController {
         if(record!=null ){//执行成功或失败的记录
             job.setRecordId(record.getRecordId());
             job.setActionId(record.getActionId());
+
+            this.jobActionGroupService.updateActionGroupParam(record.getActionId(),param);
         }else{//执行起始节点任务
             Long actionId= jobActionGroupService.acquire(job);
             job.setActionId(actionId);
-            this.jobActionGroupService.updateActionGroup(job, actionId);
-            record = this.recordService.insertPendingReocrd(actionId, job,Opencron.RunStatus.PENDING);
+
+            record =this.jobActionGroupService.updateActionAndSetParam(actionId,job,param);
+
             job.setRecordId(record.getRecordId());
             isNew=true;
         }

@@ -65,7 +65,7 @@ public class Job implements Serializable {
     //是否为流程任务的最后一个子任务
     private Boolean lastChild;
 
-    private Boolean warning;
+    private Integer alarmCode=0;//默认都不通知
 
     private String mobiles;
 
@@ -256,12 +256,12 @@ public class Job implements Serializable {
         this.lastChild = lastChild;
     }
 
-    public Boolean getWarning() {
-        return warning;
+    public Integer getAlarmCode() {
+        return alarmCode;
     }
 
-    public void setWarning(Boolean warning) {
-        this.warning = warning;
+    public void setAlarmCode(Integer alarmCode) {
+        this.alarmCode = alarmCode;
     }
 
     public String getMobiles() {
@@ -326,7 +326,7 @@ public class Job implements Serializable {
                 ", flowNum=" + flowNum +
                 ", runModel=" + runModel +
                 ", lastChild=" + lastChild +
-                ", warning=" + warning +
+                ", alarmCode=" + alarmCode +
                 ", mobiles='" + mobiles + '\'' +
                 ", emailAddress='" + emailAddress + '\'' +
                 ", deleted=" + deleted +

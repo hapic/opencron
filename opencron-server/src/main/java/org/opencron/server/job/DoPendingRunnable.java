@@ -64,16 +64,12 @@ public class DoPendingRunnable implements Runnable {
                     judgeMaxRunnint();
                     log.info("do pending job record:{} actionId:{}",record.getRecordId(),record.getActionId());
 
-//                    offSet=Math.min(record.getRecordId().intValue(),offSet);
-//                    log.info("next offset:{}",offSet);
-
                     final JobVo jobVo = jobService.getJobVoById(record.getJobId());
                     jobVo.setAgent(agentService.getAgent(jobVo.getAgentId()));
 
                     jobExecuteServicePool.execute(new JobExecuteService(jobVo,record,executeService));
                 }
-
-                records =  recordService.loadPendingRecord(offSet,limit);
+                records.clear();
             }
             offSet=Integer.MAX_VALUE;
             records=null;

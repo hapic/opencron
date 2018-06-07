@@ -48,6 +48,8 @@ public class Config implements Serializable {
 
     private Integer maxRunning;
 
+    private String ddToken;
+
 
     public Long getConfigId() {
         return configId;
@@ -120,6 +122,14 @@ public class Config implements Serializable {
 
     public void setMaxRunning(Integer maxRunning) {
         this.maxRunning = maxRunning;
+    }
+
+    public String getDdToken() {
+        return ddToken;
+    }
+
+    public void setDdToken(String ddToken) {
+        this.ddToken = ddToken;
     }
 
     @Override

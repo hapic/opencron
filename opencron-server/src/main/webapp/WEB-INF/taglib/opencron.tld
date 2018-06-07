@@ -63,6 +63,12 @@
     </function>
 
     <function>
+        <name>auth</name>
+        <function-class>org.opencron.common.utils.RightCode</function-class>
+        <function-signature>boolean auth(int,int)</function-signature>
+    </function>
+
+    <function>
         <name>diffdate</name>
         <function-class>org.opencron.server.tag.CronTag</function-class>
         <function-signature>java.lang.String diffdate(java.util.Date,java.util.Date)</function-signature>

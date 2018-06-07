@@ -20,8 +20,18 @@ public class ParamUntils {
 
 
     public static String command(String command,Date date){
-        String[] split = command.split(" ");
-        StringBuffer sb= new StringBuffer();
+        int index = command.indexOf("$");
+        if(index<0){
+            return command;
+        }
+
+        String cmd = command.substring(0, index).trim();
+        StringBuffer sb= new StringBuffer(cmd);
+        String param = command.substring(index );
+        if(StringUtils.isNullString(param)){
+            param=param.trim();
+        }
+        String[] split = param.split(" ");
         for(int i=0;i<split.length;i++){
             if(split[i].startsWith("$")){
                 String value= replace(split[i],date);
@@ -29,10 +39,6 @@ public class ParamUntils {
             }else if(i==0){
                 sb.append(split[i]);
             }
-        }
-
-        if(sb.length()<1){
-            return command;
         }
         return sb.toString();
     }
@@ -48,7 +54,7 @@ public class ParamUntils {
      */
     private static String replace(String cmd,Date date) {
         if(cmd.equalsIgnoreCase(P_TIME)){
-            return DateUtils.formatFullDate2(date);
+            return DateUtils.formatFullDate(date);
         }else if(cmd.equalsIgnoreCase(P_DATE)){
             return DateUtils.formatSimpleDate(date);
         }
@@ -58,7 +64,7 @@ public class ParamUntils {
         return replace(cmd,new Date());
     }
 
-    public static String command(String command,String...values){
+    public static String command(String command,String value){
         int index$ = command.indexOf("$");
         String substring=null;
         if(index$>-1){
@@ -66,10 +72,8 @@ public class ParamUntils {
         }else {
             substring=command;
         }
-        StringBuffer sb= new StringBuffer(substring);
-        for(String value:values){
-            sb.append(" "+value);
-        }
+        StringBuffer sb= new StringBuffer(substring.trim());
+        sb.append(" "+value);
         return sb.toString();
     }
 
@@ -88,8 +92,8 @@ public class ParamUntils {
 
     public static void main(String[] args) {
 
-        String cmd="date;";
-        String command = ParamUntils.command(cmd," ");
+        String cmd="date;sleep 10; $date $time";
+        String command = ParamUntils.command(cmd,"2018-08-3 2018-08-3");
 //        String parma = param("/ab/c/c.sh 18273 232");
         System.out.println(command);
 

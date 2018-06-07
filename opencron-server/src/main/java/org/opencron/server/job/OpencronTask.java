@@ -23,14 +23,11 @@
 package org.opencron.server.job;
 
 import org.opencron.common.job.Opencron;
-import org.opencron.common.utils.AlarmCache;
 import org.opencron.common.utils.CommonUtils;
 import org.opencron.common.utils.DateUtils;
 import org.opencron.server.alarm.AlarmNoticeFacory;
 import org.opencron.server.alarm.AlarmTypes;
 import org.opencron.server.alarm.MsgTemplet;
-import org.opencron.server.domain.JobActionGroup;
-import org.opencron.server.domain.JobGroup;
 import org.opencron.server.domain.Record;
 import org.opencron.server.service.*;
 import org.opencron.server.vo.JobActionGroupVo;
@@ -142,7 +139,7 @@ public class OpencronTask implements InitializingBean {
     }
 
     //完成后的消息通知
-    @Scheduled(cron = "0 0/10 * * * ?")
+//    @Scheduled(cron = "0 0/5 * * * ?")
     public void finishedAlarm() {
         String beginTimeCurDay = DateUtils.getBeginTimeCurDayTime();
         String endTimeCurDay = DateUtils.getEndTimeCurDayTime();

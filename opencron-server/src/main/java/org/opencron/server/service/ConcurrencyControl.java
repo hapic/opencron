@@ -7,7 +7,9 @@ package org.opencron.server.service;
  * @version V1.0
  */
 
+import org.opencron.server.alarm.DDSendNotice;
 import org.opencron.server.domain.Config;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -25,6 +27,9 @@ public class ConcurrencyControl {
     private volatile Integer maxRunning=30;
 
     private volatile AtomicInteger atomicInteger=new AtomicInteger(maxRunning);
+
+    @Autowired
+    private DDSendNotice ddSendNotice;
 
 
 
@@ -99,5 +104,8 @@ public class ConcurrencyControl {
         this.maxRunning = sysConfig.getMaxRunning();
 
         atomicInteger=new AtomicInteger(this.maxRunning);
+
+
+        ddSendNotice.setToken(sysConfig.getDdToken());
     }
 }

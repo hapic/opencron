@@ -448,6 +448,12 @@
                 });
             });
 
+            //jobId
+            $('#jobId').multiselect({
+                enableFiltering: true,
+                filterPlaceholder: '任务名称'
+            });
+
         });
 
         function doUrl() {

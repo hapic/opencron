@@ -10,12 +10,14 @@ package org.opencron.server.service;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.opencron.common.exception.ParameterException;
+import org.opencron.common.exception.UnknownException;
 import org.opencron.common.job.Opencron;
 import org.opencron.common.utils.CommonUtils;
 import org.opencron.server.DBException;
 import org.opencron.server.dao.QueryDao;
 import org.opencron.server.domain.JobActionGroup;
 import org.opencron.server.domain.JobGroup;
+import org.opencron.server.domain.Record;
 import org.opencron.server.vo.JobActionGroupVo;
 import org.opencron.server.vo.JobVo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,9 @@ public class JobActionGroupService {
     @Autowired
     private JobGroupService jobGroupService;
 
+    @Autowired
+    private RecordService recordService;
+
 
     public JobActionGroup loadActionGroupByActionId(Long actionId){
         String sql="SELECT * FROM t_job_action_group tjag " +
@@ -48,6 +53,14 @@ public class JobActionGroupService {
 
     public JobActionGroup merge(JobActionGroup actionGroup){
         return (JobActionGroup)queryDao.merge(actionGroup);
+    }
+
+    public void updateActionGroupParam(Long actionId,String param){
+        if(org.opencron.common.utils.StringUtils.isNotNullString(param)){
+            JobActionGroup jobActionGroup = loadActionGroupByActionId(actionId);
+            jobActionGroup.setParam(param);
+            this.merge(jobActionGroup);
+        }
     }
 
 
@@ -71,6 +84,15 @@ public class JobActionGroupService {
         this.queryDao.merge(actionGroup);
     }
 
+    public void setActionGroupToJob(JobVo job, Long actionId) {
+        if(job.getActionGroup()==null){
+            JobActionGroup actionGroup = loadActionGroupByActionId(actionId);
+            if(actionGroup==null){
+                throw new UnknownException("not found "+actionId+" action group!");
+            }
+            job.setActionGroup(actionGroup);
+        }
+    }
     /**
      * 更新当前执行组的状态
      * @param job
@@ -147,5 +169,12 @@ public class JobActionGroupService {
                 "SET tjag.`alarm`=? " +
                 "WHERE tjag.`alarm`=? AND tjag.`id`=?";
         return this.queryDao.createSQLQuery(sql,toAlarm,fromAlarm,id).executeUpdate();
+    }
+
+    public Record updateActionAndSetParam(Long actionId, JobVo job, String param) {
+        this.updateActionGroup(job, actionId);
+        this.setActionGroupToJob(job,actionId);
+        this.updateActionGroupParam(actionId,param);
+       return this.recordService.insertPendingReocrd(actionId, job,Opencron.RunStatus.PENDING);
     }
 }

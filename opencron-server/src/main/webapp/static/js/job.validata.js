@@ -214,6 +214,9 @@ function Validata() {
                 if (isNaN(timeout) || parseInt(timeout) < 0) {
                     opencron.tipError("#timeout" + elemFix, "超时时间必须为正整数,请填写正确的超时时间!");
                     this.status = false;
+                } else if($('#timeoutAlarm:checked').val()==2 && parseInt(timeout) < 1){
+                    opencron.tipError("#timeout" + elemFix, "选择超时通知，必须填写超时时间!");
+                    this.status = false;
                 } else {
                     opencron.tipOk("#timeout" + elemFix);
                 }
@@ -224,11 +227,11 @@ function Validata() {
         },
 
         warning: function () {
-            var _warning = $('input[type="radio"][name="warning"]:checked').val();
-            if (_warning == 1) {
-                this.mobiles();
-                this.email();
-            }
+            // var _warning = $('#timeoutAlarm:checked').val();
+            // if (_warning == 2) {
+            //     this.timeout();
+            //     // this.email();
+            // }
         },
 
         verify: function () {

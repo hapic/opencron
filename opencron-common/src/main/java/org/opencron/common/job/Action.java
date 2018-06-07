@@ -31,7 +31,8 @@ public enum Action implements org.apache.thrift.TEnum {
   KILL(5),
   PROXY(6),
   GUID(7),
-  RESTART(8);
+  RESTART(8),
+  TIMEOUT(9);
 
   private final int value;
 

@@ -7,6 +7,7 @@ package org.opencron.server.job;
  * @version V1.0
  */
 
+import org.opencron.server.alarm.AlertMessageQueue;
 import org.opencron.server.service.*;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class OpencronWatch implements InitializingBean {
 
     //处理pending状态的记录的线程池
     ExecutorService doPendingService;
+
+
+    ExecutorService sendMessageService;
 
 
     //清理执行记录的线程池
@@ -56,6 +60,8 @@ public class OpencronWatch implements InitializingBean {
 
         doPendingService= newSingleThreadExecutor();
 
+        sendMessageService= newSingleThreadExecutor();
+
         clearRecordService= newSingleThreadExecutor();
 
         jobExecuteServicePool= newFixedThreadPool(50);
@@ -63,6 +69,8 @@ public class OpencronWatch implements InitializingBean {
         doPendingService.execute(new DoPendingRunnable(recordService,jobService,agentService,executeService,jobExecuteServicePool,concurrencyControl));
 
         clearRecordService.execute(new ClearJobRecordRunnable(jobActionGroupService,recordService,jobService));
+
+        sendMessageService.execute(new SendMessageRunnable());
 
     }
 }

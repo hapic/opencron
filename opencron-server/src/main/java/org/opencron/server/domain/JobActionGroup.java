@@ -31,6 +31,16 @@ public class JobActionGroup {
 
     private Integer alarm=0;//是否已经通知
 
+    private String param;//运行参数
+
+
+    public String getParam() {
+        return param;
+    }
+
+    public void setParam(String param) {
+        this.param = param;
+    }
 
     public Integer getAlarm() {
         return alarm;

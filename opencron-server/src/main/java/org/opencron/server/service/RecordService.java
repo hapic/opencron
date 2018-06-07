@@ -30,6 +30,7 @@ import org.opencron.common.utils.ParamUntils;
 import org.opencron.common.utils.StringUtils;
 import org.opencron.server.DBException;
 import org.opencron.server.dao.QueryDao;
+import org.opencron.server.domain.JobActionGroup;
 import org.opencron.server.domain.Record;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.domain.User;
@@ -43,6 +44,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
+import java.util.Date;
 import java.util.List;
 
 import static org.opencron.common.utils.CommonUtils.notEmpty;
@@ -438,10 +440,13 @@ public class RecordService {
             record.setParentId(childJob.getRecordId());
             record.setJobType(childJob.getJobType());
 
-            if(StringUtils.isNullString(childJob.getParam())){
-                record.setCommand(ParamUntils.command(record.getCommand()));//替换具体的变量值
+            JobActionGroup actionGroup = childJob.getActionGroup();
+
+            if(StringUtils.isNullString(actionGroup.getParam())){
+                Date startTime = actionGroup.getStartTime();
+                record.setCommand(ParamUntils.command(record.getCommand(),startTime));//替换具体的变量值
             }else{
-                record.setCommand(ParamUntils.command(record.getCommand(),childJob.getParam()));
+                record.setCommand(ParamUntils.command(record.getCommand(),actionGroup.getParam()));
             }
 
             String code = DigestUtils.md5Hex(record.getStatus() + record.getJobId() + record.getActionId()+"");

@@ -80,8 +80,9 @@
 
         $(document).ready(function () {
             opencronValidata = new Validata('${contextPath}','${csrf}','${job.jobId}');
-            $('#weight').multiselect();
+            $('#weight').multiselect({filter:true});
             $('#dependenceid').multiselect({
+                enableFiltering: true,filterPlaceholder:'任务名称',
                 onChange: function(option, checked, select) {
                     //判断选择的是什么运行模式
                     var selectedOptions = $('#dependenceid option:selected');
@@ -288,6 +289,22 @@
                 </div>
                 <br>
 
+
+                <br>
+                <div class="form-group">
+                    <label for="alarm" class="col-lab control-label wid150"><i class="glyphicon glyphicon-volume-up"></i>&nbsp;&nbsp;通知功能&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <div class="col-md-10" id="alarm">
+                        <label for="failAlarm" ><input type="checkbox" name="alarmCodes" ${cron:auth(job.alarmCode,1) ? "checked":""} id="failAlarm" value="1"/>失败通知</label>
+
+                        <label for="successAlarm" ><input type="checkbox" name="alarmCodes" ${cron:auth(job.alarmCode,4) ? "checked":"" } id="successAlarm" value="4"/>成功通知</label>
+
+                        <label for="timeoutAlarm" >
+                            <input type="checkbox" name="alarmCodes" id="timeoutAlarm" ${cron:auth(job.alarmCode,2) ?"checked":""} value="2"/>超时通知
+                        </label>
+                        <span class="tips" tip=""></span>
+                    </div>
+                </div>
+                <br/>
                 <div class="form-group">
                     <label for="timeout" class="col-lab control-label wid150"><i class="glyphicon glyphicon-ban-circle"></i>&nbsp;&nbsp;超时时间&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">

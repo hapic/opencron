@@ -7,6 +7,8 @@ package org.opencron.server.alarm;
  * @version V1.0
  */
 
+import org.opencron.common.utils.RightCode;
+
 import java.util.Map;
 
 /**
@@ -34,5 +36,33 @@ public class AlarmNoticeFacory {
             SendNotice instantce = AlarmNoticeFacory.getInstantce(at);
             instantce.send(accept,msg);
         }
+    }
+
+
+    public static void putMessage(Integer code, RightCode.AlarmCode alarmCode,String ... info) {
+        if(!RightCode.auth(code,alarmCode.getCode())){
+            return;
+        }
+        AlertMessage alertMessage=null;
+        switch (alarmCode){
+            case FAIL:
+                String jobFailAlarm = MsgTemplet.getJobFailAlarm(info[0]);
+                alertMessage= new AlertMessage(jobFailAlarm);
+                break;
+            case SUCCESS:
+
+                String jobSuccessAlarm = MsgTemplet.getJobSuccessAlarm(info[0]);
+                alertMessage= new AlertMessage(jobSuccessAlarm);
+                break;
+            case TIMEOUT:
+                String jobTimeoutAlarm = MsgTemplet.getJobTimeoutAlarm(info[0]);
+                alertMessage= new AlertMessage(jobTimeoutAlarm);
+                break;
+            case ERROR:
+                String jobErrorAlarm = MsgTemplet.getJobErrorAlarm(info);
+                alertMessage= new AlertMessage(jobErrorAlarm);
+        }
+        AlertMessageQueue.put(alertMessage);
+
     }
 }

@@ -376,66 +376,6 @@ public class JobService {
         }
     }
 
-
-    public void saveFlowJob(Job job, List<Job> children) throws SchedulerException {
-        job.setLastChild(false);
-        job.setUpdateTime(new Date());
-        job.setFlowNum(0);//顶层sort是0
-        /**
-         * 保存最顶层的父级任务
-         */
-        if (job.getJobId() != null) {
-            merge(job);
-            /**
-             * 当前作业已有的子作业
-             */
-            JobVo jobVo = new JobVo();
-            jobVo.setJobType(JobType.FLOW.getCode());
-            jobVo.setFlowId(job.getFlowId());
-
-            /**
-             * 取差集..
-             */
-            List<JobVo> hasChildren = queryChildren(jobVo);
-            //数据库里已经存在的子集合..
-            top:
-            for (JobVo hasChild : hasChildren) {
-                //当前页面提交过来的子集合...
-                for (Job child : children) {
-                    if (child.getJobId() != null && child.getJobId().equals(hasChild.getJobId())) {
-                        continue top;
-                    }
-                }
-                /**
-                 * 已有的子作业被删除的,则做删除操作...
-                 */
-                delete(hasChild.getJobId());
-            }
-        } else {
-            Job job1 = merge(job);
-            job1.setFlowId(job1.getJobId());//flowId
-            merge(job1);
-            job.setJobId(job1.getJobId());
-        }
-
-        for (int i = 0; i < children.size(); i++) {
-            Job child = children.get(i);
-            /**
-             * 子作业的流程编号都为顶层父任务的jobId
-             */
-            child.setFlowId(job.getJobId());
-            child.setUserId(job.getUserId());
-            child.setUpdateTime(new Date());
-            child.setJobType(JobType.FLOW.getCode());
-            child.setFlowNum(i + 1);
-            child.setLastChild(child.getFlowNum() == children.size());
-            child.setWarning(job.getWarning());
-            child.setMobiles(job.getMobiles());
-            child.setEmailAddress(job.getEmailAddress());
-            merge(child);
-        }
-    }
-
     public boolean checkJobOwner(HttpSession session, Long userId) {
         return OpencronTools.isPermission(session) || userId.equals(OpencronTools.getUserId(session));
     }
@@ -454,14 +394,6 @@ public class JobService {
         if ( !job.getExecType().equals(ExecType.AUTO.getStatus()) ) {
             return false;
         }
-
-        //如果有待执行的记录也标记为暂停
-       /* List<Record> listRecord=this.recordService.loadPendingRecordByJobId(job.getJobId());
-
-        for(Record record:listRecord){
-            int i = this.recordService.updateRecord(record.getRecordId(), RunStatus.PENDING.getStatus(), RunStatus.STOPED.getStatus());
-            logger.info("stop job:{} record:{} result:{}",job.getJobId(),record.getRecordId(),i);
-        }*/
 
         CronType cronType = CronType.getByType(job.getCronType());
 

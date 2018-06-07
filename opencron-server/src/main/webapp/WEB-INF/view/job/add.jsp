@@ -35,15 +35,25 @@
         $(document).ready(function () {
             opencronValidata = new Validata('${contextPath}','${csrf}');
 
-            $('#groupId').multiselect();
+            $('#groupId').multiselect({enableFiltering: true});
 
-            $('#dependenceid').multiselect();
-            $('#weight').multiselect();
+            $('#dependenceid').multiselect({enableFiltering: true});
+            $('#weight').multiselect({enableFiltering: true});
 
 
 
             $("#groupId").change(function () {//如果选择发生了变化
                 refreshMultiSelect($(this).val());
+            });
+
+            $("#timeout").change(function () {
+                var regPos = / ^\d+$/;
+                var val=$(this).val();
+                if(val.text(regPos)){
+                    $("#timeoutAlarm").iCheck('check');
+                }else{
+                    $("#timeoutAlarm").iCheck('uncheck');
+                }
             });
 
 
@@ -72,6 +82,8 @@
                         maxHeight : 350,
 //                        includeSelectAllOption : true,
                         numberDisplayed : 5,
+                        enableFiltering: true,
+                        filterPlaceholder:'任务名称',
                         onChange: function(option, checked, select) {
                             //判断选择的是什么运行模式
                             var selectedOptions = $('#dependenceid option:selected');
@@ -265,8 +277,24 @@
                 </div>
                 <br>
 
+
+                <br>
                 <div class="form-group">
-                    <label for="timeout" class="col-lab control-label wid150"><i class="glyphicon glyphicon-ban-circle"></i>&nbsp;&nbsp;超时时间&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <label for="alarm" class="col-lab control-label wid150"><i class="glyphicon glyphicon-volume-up"></i>&nbsp;&nbsp;通知功能&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <div class="col-md-10" id="alarm">
+                        <label for="failAlarm" ><input type="checkbox" name="alarmCodes" id="failAlarm" value="1"/>失败通知</label>
+
+                        <label for="successAlarm" ><input type="checkbox" name="alarmCodes" id="successAlarm" value="4"/>成功通知</label>
+
+                        <label for="timeoutAlarm" > 
+                            <input type="checkbox" name="alarmCodes" id="timeoutAlarm" value="2"/>超时通知
+                        </label>
+                        <span class="tips" tip=""></span>
+                    </div>
+                </div>
+                <br/>
+                <div class="form-group">
+                    <label for="timeout" class="col-lab control-label wid150"><i class="glyphicon glyphicon-flag"></i>&nbsp;&nbsp;超时时间&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="timeout" name="timeout" value="0">
                         <span class="tips" tip="执行作业允许的最大时间,超过则为超时(0:忽略超时时间,分钟为单位)">执行作业允许的最大时间,超过则为超时(0:忽略超时时间,分钟为单位)</span>

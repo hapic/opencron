@@ -48,8 +48,6 @@ public class KahnTopo<T> {
             // 将当前顶点添加到结果集中
             result.add(v);
 
-
-
             if(this.graph.edgeNode.keySet().isEmpty()){
                 if( setOfZeroIndegree.isEmpty()){
                     return;
@@ -81,7 +79,6 @@ public class KahnTopo<T> {
         // 如果此时图中还存在边，那么说明图中含有环路
         if (!this.graph.vertexSet.isEmpty()) {
             cycle=true;
-//
         }
     }
 

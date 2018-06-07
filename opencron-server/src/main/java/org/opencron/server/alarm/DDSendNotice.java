@@ -28,18 +28,19 @@ public class DDSendNotice implements SendNotice {
 
 //    https://oapi.dingtalk.com/robot/send?access_token=
     private RecordVo record;
-    String token="b4538d0fe797dc828727eb896d96cd6744c31622a110118ae00c8a883d69bbf8";
-    String url="http://frcsms.eloancn.com/SendSMS/sendMsgByHs?access_token="+token;
+    String url="http://frcsms.eloancn.com/SendSMS/sendMsgByHs?access_token=";
+    StringBuffer sbUrl= new StringBuffer(url);
 
     @Override
     public boolean send(String accept, String msg) {
+
         JSONObject jsonObject= new JSONObject();
 
         jsonObject.put("content",msg);
         jsonObject.put("sendWay","0");
         jsonObject.put("source","WARNING_FIXME");
         try {
-            sendPost(url,jsonObject.toJSONString());
+            sendPost(sbUrl.toString(),jsonObject.toJSONString());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -63,13 +64,23 @@ public class DDSendNotice implements SendNotice {
         }
         return result;
     }
-
-
-    public static void main(String[] args) {
-        DDSendNotice dd= new DDSendNotice();
-        dd.send("","test");
-
-
+    public void setToken(String token) {
+        sbUrl.append(token);
     }
 
+    public void changeToken(String token){
+        int i = sbUrl.lastIndexOf("=");
+        String substring = sbUrl.substring(0, i+1);
+        sbUrl=new StringBuffer(substring).append(token);
+    }
+
+    public static void main(String[] args) {
+        DDSendNotice ddSendNotice= new DDSendNotice();
+        ddSendNotice.setToken("cffcc6996a57a834a8bde29b79f4ae77103eb57fa1ce37f2743e1867be03dd87");
+        System.out.println(ddSendNotice.sbUrl.toString());
+        ddSendNotice.send(null,"test");
+        ddSendNotice.changeToken("b4538d0fe797dc828727eb896d96cd6744c31622a110118ae00c8a883d69bbf8");
+        ddSendNotice.send(null,"test");
+        System.out.println(ddSendNotice.sbUrl.toString());
+    }
 }

@@ -88,7 +88,6 @@ public class Record implements Serializable {
 
     private Integer weight=0;//任务的权重
 
-
     public Record() {
     }
 

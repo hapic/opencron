@@ -26,12 +26,17 @@ import com.mysql.jdbc.PacketTooBigException;
 import com.sun.org.apache.regexp.internal.RE;
 import org.opencron.common.exception.InvalidException;
 import org.opencron.common.exception.PingException;
+import org.opencron.common.exception.UnknownException;
 import org.opencron.common.job.Action;
 import org.opencron.common.job.Opencron;
 import org.opencron.common.job.Request;
 import org.opencron.common.job.Response;
 import org.opencron.common.utils.*;
 import org.opencron.server.DBException;
+import org.opencron.server.alarm.AlarmNoticeFacory;
+import org.opencron.server.alarm.AlertMessage;
+import org.opencron.server.alarm.AlertMessageQueue;
+import org.opencron.server.alarm.MsgTemplet;
 import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronCaller;
 import org.opencron.server.job.OpencronMonitor;
@@ -139,9 +144,25 @@ public class ExecuteService implements Job {
         return executeJob(job,actionId,initChildJob);
     }
 
+    private void setActionGroupToJob(JobVo job, Long actionId) {
+        if(job.getActionGroup()==null){
+            JobActionGroup actionGroup = this.jobActionGroupService.loadActionGroupByActionId(actionId);
+            if(actionGroup==null){
+                throw new UnknownException("not found "+actionId+" action group!");
+            }
+            job.setActionGroup(actionGroup);
+        }
+    }
+
     public void handleExecuteJob(JobVo job,boolean isNew) {
         Long actionId=null;
 
+        //保存当前执行的参数
+        JobActionGroup actionGroup = this.jobActionGroupService.loadActionGroupByActionId(job.getActionId());
+        actionGroup.setParam(job.getParam());
+        this.jobActionGroupService.merge(actionGroup);
+
+        job.setActionGroup(actionGroup);
         if(job.getRecordId()!=null){
             Record record = this.recordService.get(job.getRecordId());
             actionId=record.getActionId();
@@ -199,6 +220,9 @@ public class ExecuteService implements Job {
      * @return
      */
     public boolean executeJob(JobVo job,Long actionId,boolean initChildJob) {
+
+        setActionGroupToJob(job,actionId);
+
 //        if (!checkJobPermission(job.getAgentId(), job.getUserId())) return false;
         logger.info("start job:{} actionId:{}",job.getJobName(),actionId);
 
@@ -433,18 +457,23 @@ public class ExecuteService implements Job {
             record.setUniqueCode(null);
 
             if (!result.isSuccess()) {//如果没有成功
+                success = false;
                 recordService.merge(record);
                 //被kill,直接退出
                 if (StatusCode.KILL.getValue().equals(result.getExitCode())) {
                     recordService.flowJobDone(record);
-                } else {
-                    success = false;
+                }else if (record.getSuccess().equals(ResultStatus.FAILED.getStatus())) {//超时
+                    AlarmNoticeFacory.putMessage(job.getAlarmCode(), RightCode.AlarmCode.FAIL,job.getJobName());
+
+                } else if(record.getSuccess().equals(ResultStatus.TIMEOUT.getStatus())){//失败
+                    AlarmNoticeFacory.putMessage(job.getAlarmCode(), RightCode.AlarmCode.TIMEOUT,job.getJobName());
                 }
                 return false;
             }else{//如果成功了
                 recordService.merge(record);
-                String param = ParamUntils.param(record.getCommand());
-                job.setParam(param);
+
+                AlarmNoticeFacory.putMessage(job.getAlarmCode(), RightCode.AlarmCode.SUCCESS,job.getJobName());
+
                 job.setExecType(record.getExecType());//触发方式
                 if(initChildJob){
                     initChildJob(actionId,job);//初始化所有任务的子任务
@@ -481,15 +510,6 @@ public class ExecuteService implements Job {
                         flag = reExecuteJob(red, job, JobType.FLOW);
                         ++index;
                     } while (!flag && index < job.getRunCount());
-
-                    //重跑到截止次数还是失败,则发送通知,记录最终运行结果
-                    if (!flag) {
-                        noticeService.notice(job, null);
-                        recordService.flowJobDone(record);
-                    }
-                } else {
-                    noticeService.notice(job, null);
-                    recordService.flowJobDone(record);
                 }
             }
         }
@@ -506,8 +526,8 @@ public class ExecuteService implements Job {
     public void initChildJob(Long actionId,JobVo job) {
 
 //        if (!job.getLastChild()) {//如果不是最后一个节点则初始化后置任务的数据
-            String inputParam=job.getParam();
-            List<JobVo> childeJobs=jobDependenceService.childsNodeJob(job.getJobId());
+        JobActionGroup actionGroup = job.getActionGroup();
+        List<JobVo> childeJobs=jobDependenceService.childsNodeJob(job.getJobId());
             logger.info("action:{} job:{} childeSize:{}",actionId,job.getJobName(),childeJobs.size());
             if(CommonUtils.isEmpty(childeJobs)){
                 logger.info("action:{} job:{} no child",actionId,job.getJobName());
@@ -515,7 +535,7 @@ public class ExecuteService implements Job {
             }
             for(JobVo childJob:childeJobs){
                 try {
-                    childJob.setParam(inputParam);
+                    childJob.setActionGroup(actionGroup);
 
                     childJob.setExecType(job.getExecType());//设置执行方式
                     Record pendingRecord = recordService.insertPendingReocrd(actionId,childJob, RunStatus.PENDING);//加载下级任务的执行状态
@@ -679,26 +699,28 @@ public class ExecuteService implements Job {
      */
     public boolean reExecuteJob(final Record parentRecord, JobVo job, JobType jobType) {
 
-        if (parentRecord.getRedoCount().equals(reExecuteThreadMap.get(parentRecord.getRecordId()))) {
+        /*if (parentRecord.getRedoCount().equals(reExecuteThreadMap.get(parentRecord.getRecordId()))) {
             return false;
         } else {
             reExecuteThreadMap.put(parentRecord.getRecordId(), parentRecord.getRedoCount());
-        }
+        }*/
 
-        parentRecord.setStatus(RunStatus.RERUNNING.getStatus());
+        parentRecord.setStatus(RunStatus.REDO.getStatus());
         Record record = new Record(job);
 
         try {
-            recordService.merge(parentRecord);
+
             /**
              * 当前重新执行的新纪录
              */
             job.setExecType(ExecType.RERUN.getStatus());
+            record.setActionId(parentRecord.getActionId());
             record.setParentId(parentRecord.getRecordId());
             record.setGroupId(parentRecord.getGroupId());
             record.setJobType(jobType.getCode());
             parentRecord.setRedoCount(parentRecord.getRedoCount() + 1);//运行次数
             record.setRedoCount(parentRecord.getRedoCount());
+            record.setStatus(RunStatus.RUNNING.getStatus());//当前记录为运行中
             record = recordService.merge(record);
 
             //执行前先检测一次通信是否正常
@@ -710,18 +732,19 @@ public class ExecuteService implements Job {
             if (result.isSuccess()) {
                 parentRecord.setStatus(RunStatus.RERUNDONE.getStatus());
 
+                //发送成功通知
+                AlarmNoticeFacory.putMessage(job.getAlarmCode(), RightCode.AlarmCode.SUCCESS,job.getJobName());
+
                 initChildJob(parentRecord.getActionId(),job);
 
                 //重跑的某一个子任务被Kill,则整个重跑计划结束
             } else if (StatusCode.KILL.getValue().equals(result.getExitCode())) {
                 parentRecord.setStatus(RunStatus.RERUNDONE.getStatus());
-            } else {
+            } else if (record.getSuccess().equals(ResultStatus.FAILED.getStatus())) {//超时
+                AlarmNoticeFacory.putMessage(job.getAlarmCode(), RightCode.AlarmCode.FAIL,job.getJobName());
 
-                //已经重跑到最后一次了,还是失败了,则认为整个重跑任务失败,发送通知
-                if (parentRecord.getRunCount().equals(parentRecord.getRedoCount())) {
-                    noticeService.notice(job, null);
-                }
-                parentRecord.setStatus(RunStatus.RERUNUNDONE.getStatus());
+            } else if(record.getSuccess().equals(ResultStatus.TIMEOUT.getStatus())){//失败
+                AlarmNoticeFacory.putMessage(job.getAlarmCode(), RightCode.AlarmCode.TIMEOUT,job.getJobName());
             }
             this.loggerInfo("execute successful:jobName:{} at ip:{},port:{}", job, null);
         } catch (Exception e) {
@@ -733,10 +756,6 @@ public class ExecuteService implements Job {
             errorExec(record, this.loggerError("execute failed:jobName:%s at ip:%s,port:%d,info:%s", job, e.getMessage(), e));
 
         } finally {
-            //如果已经到了任务重跑的截至次数直接更新为已重跑完成
-            if (parentRecord.getRunCount().equals(parentRecord.getRedoCount())) {
-                parentRecord.setStatus(RunStatus.RERUNDONE.getStatus());
-            }
             try {
                 recordService.merge(record);
                 recordService.merge(parentRecord);
@@ -854,7 +873,7 @@ public class ExecuteService implements Job {
      */
     private void errorExec(Record record, String errorInfo) {
         record.setSuccess(ResultStatus.FAILED.getStatus());//程序调用失败
-        record.setStatus(RunStatus.DONE.getStatus());//已完成
+        record.setStatus(RunStatus.REDO.getStatus());//已完成
         record.setReturnCode(StatusCode.ERROR_EXEC.getValue());
         record.setEndTime(new Date());
         record.setMessage(errorInfo);
