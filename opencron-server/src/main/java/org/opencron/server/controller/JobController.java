@@ -246,6 +246,7 @@ public class JobController extends BaseController {
         job.setLastChild(true);//默认未最后一个子节点
         job.setAlarmCode(RightCode.code(alarmCodes));
         job.setJobType(Opencron.JobType.FLOW.getCode());
+        job.setCronType(Opencron.CronType.QUARTZ.getType());//quartz触发
         String groupParam="";
         if(job.getGroupId()!=null && job.getGroupId()>0){
             groupParam="&groupId="+job.getGroupId();

@@ -61,7 +61,7 @@ function Validata() {
 
         cronExp: function () {
             var execType = $('input[type="radio"][name="execType"]:checked').val();
-            var cronType = $('input[type="radio"][name="cronType"]:checked').val();
+            var cronType = 1;//$('input[type="radio"][name="cronType"]:checked').val();
             var cronExp = $("#cronExp").val();
             if (execType == 0) {
                 if (!cronExp) {

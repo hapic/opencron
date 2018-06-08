@@ -212,15 +212,16 @@
                 </div>
                 <br>
 
-                <div class="form-group cronExpDiv">
+                <%--<input type="hidden" name="cronType" value="1" id="cronType1">--%>
+                <%--<div class="form-group cronExpDiv">
                     <label class="col-lab control-label wid150"><i class="glyphicon glyphicon-bookmark"></i>&nbsp;&nbsp;规则类型&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
-                        <label for="cronType0" class="radio-label"><input type="radio" name="cronType" value="0" id="cronType0" checked>crontab&nbsp;&nbsp;&nbsp;</label>
-                        <label for="cronType1" class="radio-label"><input type="radio" name="cronType" value="1" id="cronType1">quartz</label>&nbsp;&nbsp;&nbsp;
+                        <label for="cronType0" class="radio-label"><input type="radio"  value="0" id="cronType0" checked>crontab&nbsp;&nbsp;&nbsp;</label>
+                        <label for="cronType1" class="radio-label"><input type="radio" name="cronType" value="1" checked id="cronType1">quartz</label>&nbsp;&nbsp;&nbsp;
                         </br><span class="tips" id="cronTip" tip="crontab: unix/linux的时间格式表达式">crontab: unix/linux的时间格式表达式</span>
                     </div>
                 </div>
-                <br>
+                <br>--%>
 
                 <div class="form-group cronExpDiv timeExpDiv">
                     <label for="cronExp" class="col-lab control-label wid150"><i class="glyphicon glyphicon-filter"></i>&nbsp;&nbsp;时间规则&nbsp;&nbsp;<b>*&nbsp;</b></label>

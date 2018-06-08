@@ -444,9 +444,11 @@ public class RecordService {
 
             if(StringUtils.isNullString(actionGroup.getParam())){
                 Date startTime = actionGroup.getStartTime();
-                record.setCommand(ParamUntils.command(record.getCommand(),startTime));//替换具体的变量值
-            }else{
-                record.setCommand(ParamUntils.command(record.getCommand(),actionGroup.getParam()));
+                if(record.getCommand().indexOf("$")>-1){
+                    record.setCommand(ParamUntils.command(record.getCommand(),startTime));//替换具体的变量值
+                }
+            }else{//替换待参数的部分
+                record.setCommand(ParamUntils.replaceCmd(record.getCommand(),actionGroup.getParam()));
             }
 
             String code = DigestUtils.md5Hex(record.getStatus() + record.getJobId() + record.getActionId()+"");

@@ -216,7 +216,7 @@
                     </div>
                 </div><br>
 
-                <div class="form-group cronExpDiv" style="display: ${job.execType eq 0 ? 'block' : 'none'}">
+                <%--<div class="form-group cronExpDiv" style="display: ${job.execType eq 0 ? 'block' : 'none'}">
                     <label class="col-lab control-label wid150"><i class="glyphicon glyphicon-bookmark"></i>&nbsp;&nbsp;规则类型&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
                         <label for="cronType0" class="radio-label"><input type="radio" name="cronType" value="0" id="cronType0" ${job.cronType eq 0 ? 'checked' : ''}>crontab&nbsp;&nbsp;&nbsp;</label>
@@ -228,7 +228,7 @@
                         </span>
                     </div>
                 </div>
-                <br>
+                <br>--%>
 
                 <div class="form-group cronExpDiv timeExpDiv" style="display: ${job.execType eq 0 ? 'block' : 'none'}">
                     <label for="cronExp" class="col-lab control-label wid150"><i class="glyphicon glyphicon-filter"></i>&nbsp;&nbsp;时间规则&nbsp;&nbsp;<b>*&nbsp;</b></label>

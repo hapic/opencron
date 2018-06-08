@@ -120,14 +120,14 @@ public class SecurityHandlerInterceptor extends HandlerInterceptorAdapter {
             return false;
         }
 
-        if (handler instanceof HandlerMethod) {
+        /*if (handler instanceof HandlerMethod) {
             if (!verifyCSRF(request)) {
                 response.sendRedirect("/");
                 logger.info("[opencron]Bad request,redirect to login page");
                 OpencronTools.invalidSession(session);
                 return false;
             }
-        }
+        }*/
 
         return super.preHandle(request, response, handler);
     }

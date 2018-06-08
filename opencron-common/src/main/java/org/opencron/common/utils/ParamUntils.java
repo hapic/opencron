@@ -27,7 +27,8 @@ public class ParamUntils {
 
         String cmd = command.substring(0, index).trim();
         StringBuffer sb= new StringBuffer(cmd);
-        String param = command.substring(index );
+
+        String param = command.substring(index);
         if(StringUtils.isNullString(param)){
             param=param.trim();
         }
@@ -58,8 +59,42 @@ public class ParamUntils {
         }else if(cmd.equalsIgnoreCase(P_DATE)){
             return DateUtils.formatSimpleDate(date);
         }
-        return "";
+        return cmd;
     }
+
+    /**
+     * 按位置替换参数
+     * @param cmd
+     * @param value
+     * @return
+     */
+    public static String replaceCmd(String cmd,String  value){
+        int f$ = cmd.indexOf("$");
+        if(f$<0){
+            return cmd+" "+value;
+        }
+        String substring = cmd.substring(f$);
+        String cmdValue = replace(substring, value.split(" "));
+        return cmd.substring(0,f$).trim()+" "+cmdValue.trim();
+
+    }
+    private static String replace(String paramCmd,String ... value){
+        String[] split = paramCmd.split(" ");
+        StringBuffer sb= new StringBuffer();
+        int length = value.length;
+        int $i=0;
+        for(String s:split){
+            if(s.indexOf("$")>-1){
+                sb.append(" "+($i<length?value[$i]:s));
+                $i++;
+            }else{
+                sb.append(" "+s);
+            }
+        }
+        return sb.toString();
+
+    }
+
     private static String replace(String cmd) {
         return replace(cmd,new Date());
     }
@@ -90,7 +125,16 @@ public class ParamUntils {
         return sb.substring(sb.indexOf(" ")).trim();
     }
 
+
     public static void main(String[] args) {
+        String cmd="a.sh 2 $1 $2 $3 3 121 13s";
+        String s = replaceCmd(cmd, "2018 23");
+        System.out.println(s);
+
+
+    }
+
+    public static void mawewin(String[] args) {
 
         String cmd="date;sleep 10; $date $time";
         String command = ParamUntils.command(cmd,"2018-08-3 2018-08-3");

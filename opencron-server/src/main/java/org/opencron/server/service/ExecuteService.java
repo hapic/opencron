@@ -544,7 +544,7 @@ public class ExecuteService implements Job {
                     if(job.getExecType().equals(ExecType.OPERATOR.getStatus())){//如果是手动触发
                         if(pendingRecord.getStatus().equals(RunStatus.DONE.getStatus())
                                 || pendingRecord.getStatus().equals(RunStatus.STOPED.getStatus())
-                                || pendingRecord.getStatus().equals(RunStatus.REDO.getStatus())){
+                                || pendingRecord.getStatus().equals(RunStatus.RERUNDONE.getStatus())){
                             logger.info("redo job:{},recordId:{}",childJob.getJobName(),pendingRecord.getRecordId());
                             recordService.updateOldRecorAndInsertNewRecord(pendingRecord,childJob);
                         }
@@ -705,7 +705,7 @@ public class ExecuteService implements Job {
             reExecuteThreadMap.put(parentRecord.getRecordId(), parentRecord.getRedoCount());
         }*/
 
-        parentRecord.setStatus(RunStatus.REDO.getStatus());
+        parentRecord.setStatus(RunStatus.RERUNDONE.getStatus());
         Record record = new Record(job);
 
         try {
@@ -721,6 +721,18 @@ public class ExecuteService implements Job {
             parentRecord.setRedoCount(parentRecord.getRedoCount() + 1);//运行次数
             record.setRedoCount(parentRecord.getRedoCount());
             record.setStatus(RunStatus.RUNNING.getStatus());//当前记录为运行中
+
+            JobActionGroup actionGroup = job.getActionGroup();
+
+            if(StringUtils.isNullString(actionGroup.getParam())){
+                Date startTime = actionGroup.getStartTime();
+                if(record.getCommand().indexOf("$")>-1){
+                    record.setCommand(ParamUntils.command(record.getCommand(),startTime));//替换具体的变量值
+                }
+            }else{//替换待参数的部分
+                record.setCommand(ParamUntils.replaceCmd(record.getCommand(),actionGroup.getParam()));
+            }
+
             record = recordService.merge(record);
 
             //执行前先检测一次通信是否正常
@@ -777,15 +789,7 @@ public class ExecuteService implements Job {
     public boolean killJob(List<Record> records) {
 
         final Queue<Record> recordQueue = new LinkedBlockingQueue<Record>();
-
-        //单一任务
-//        if (JobType.SINGLETON.getCode().equals(record.getJobType())) {
-//            recordQueue.add(record);
-//        } else if (JobType.FLOW.getCode().equals(record.getJobType())) {
-//            //流程任务
-////            recordQueue.addAll(recordService.getRunningFlowJob(record.getRecordId()));
             recordQueue.addAll(records);
-//        }
 
         final List<Boolean> result = new ArrayList<Boolean>(0);
 
@@ -873,7 +877,7 @@ public class ExecuteService implements Job {
      */
     private void errorExec(Record record, String errorInfo) {
         record.setSuccess(ResultStatus.FAILED.getStatus());//程序调用失败
-        record.setStatus(RunStatus.REDO.getStatus());//已完成
+        record.setStatus(RunStatus.RERUNDONE.getStatus());//已完成
         record.setReturnCode(StatusCode.ERROR_EXEC.getValue());
         record.setEndTime(new Date());
         record.setMessage(errorInfo);
