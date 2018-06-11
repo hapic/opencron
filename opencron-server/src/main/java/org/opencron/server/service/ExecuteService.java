@@ -41,6 +41,7 @@ import org.opencron.server.domain.*;
 import org.opencron.server.job.OpencronCaller;
 import org.opencron.server.job.OpencronMonitor;
 import org.opencron.server.until.CommonLock;
+import org.opencron.server.until.Parser;
 import org.opencron.server.vo.JobVo;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -724,14 +725,13 @@ public class ExecuteService implements Job {
 
             JobActionGroup actionGroup = job.getActionGroup();
 
-            if(StringUtils.isNullString(actionGroup.getParam())){
-                Date startTime = actionGroup.getStartTime();
-                if(record.getCommand().indexOf("$")>-1){
-                    record.setCommand(ParamUntils.command(record.getCommand(),startTime));//替换具体的变量值
-                }
-            }else{//替换待参数的部分
-                record.setCommand(ParamUntils.replaceCmd(record.getCommand(),actionGroup.getParam()));
+            String parse=record.getCommand();
+            if(StringUtils.isNotNullString(actionGroup.getParam())){
+                job.setParam(actionGroup.getParam());
             }
+            parse = Parser.parse(job);
+            logger.info("job:{},command:{}",job.getJobName(),parse);
+            record.setCommand(parse);
 
             record = recordService.merge(record);
 

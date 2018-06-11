@@ -35,6 +35,7 @@ import org.opencron.server.domain.Record;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.domain.User;
 import org.opencron.server.tag.PageBean;
+import org.opencron.server.until.Parser;
 import org.opencron.server.vo.ChartVo;
 import org.opencron.server.vo.JobVo;
 import org.opencron.server.vo.RecordVo;
@@ -442,14 +443,13 @@ public class RecordService {
 
             JobActionGroup actionGroup = childJob.getActionGroup();
 
-            if(StringUtils.isNullString(actionGroup.getParam())){
-                Date startTime = actionGroup.getStartTime();
-                if(record.getCommand().indexOf("$")>-1){
-                    record.setCommand(ParamUntils.command(record.getCommand(),startTime));//替换具体的变量值
-                }
-            }else{//替换待参数的部分
-                record.setCommand(ParamUntils.replaceCmd(record.getCommand(),actionGroup.getParam()));
+            String parse=record.getCommand();
+            if(StringUtils.isNotNullString(actionGroup.getParam())){
+                childJob.setParam(actionGroup.getParam());
             }
+             parse = Parser.parse(childJob);
+            log.info("job:{},command:{}",childJob.getJobName(),parse);
+            record.setCommand(parse);
 
             String code = DigestUtils.md5Hex(record.getStatus() + record.getJobId() + record.getActionId()+"");
             record.setUniqueCode(code);

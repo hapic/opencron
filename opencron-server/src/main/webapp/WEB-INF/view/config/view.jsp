@@ -102,6 +102,10 @@
                 </td>
             </tr>
             <tr>
+                <td class="item"><i class="glyphicon glyphicon-lock"></i>&nbsp;钉钉Token：</td>
+                <td>${config.ddToken}</td>
+            </tr>
+            <tr>
                 <td class="item"><i class="glyphicon glyphicon-font"></i>&nbsp;并发数：</td>
                 <td> <span id="currentRunningJob">0</span>/${config.maxRunning} &nbsp;&nbsp;&nbsp;<img src='${contextPath}/static/img/icon-loader.gif' style="width: 14px;height: 14px"></td>
                 <script>

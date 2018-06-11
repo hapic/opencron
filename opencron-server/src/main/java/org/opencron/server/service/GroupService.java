@@ -46,8 +46,6 @@ public class GroupService {
     @Autowired
     private QueryDao queryDao;
 
-    @Autowired
-    private AgentService agentService;
 
     public PageBean<Group> getGroupPage(PageBean pageBean) {
         pageBean = queryDao.getPageBySql(pageBean,Group.class,"SELECT G.*,U.userName FROM T_GROUP AS G INNER JOIN T_USER AS U ON G.userId=U.userId");

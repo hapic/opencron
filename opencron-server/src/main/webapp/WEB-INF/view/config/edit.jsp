@@ -151,6 +151,14 @@
                 </div><br>
 
                 <div class="form-group">
+                    <label for="password" class="col-lab control-label"><i class="glyphicon glyphicon-lock"></i>&nbsp;&nbsp;钉钉Token：</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control input-sm" id="ddToken" name="ddToken" value="${config.ddToken}">
+                        <span class="tips"><b>*&nbsp;</b>钉钉Token</span>
+                    </div>
+                </div><br>
+
+                <div class="form-group">
                     <label for="maxRunning" class="col-lab control-label"><i class="glyphicon glyphicon-time"></i>&nbsp;&nbsp;并发数：</label>
                     <div class="col-md-10">
                         <input type="text" class="form-control input-sm" id="maxRunning" name="maxRunning" value="${config.maxRunning}">

@@ -76,11 +76,7 @@ public class DDSendNotice implements SendNotice {
 
     public static void main(String[] args) {
         DDSendNotice ddSendNotice= new DDSendNotice();
-        ddSendNotice.setToken("cffcc6996a57a834a8bde29b79f4ae77103eb57fa1ce37f2743e1867be03dd87");
-        System.out.println(ddSendNotice.sbUrl.toString());
-        ddSendNotice.send(null,"test");
-        ddSendNotice.changeToken("b4538d0fe797dc828727eb896d96cd6744c31622a110118ae00c8a883d69bbf8");
-        ddSendNotice.send(null,"test");
-        System.out.println(ddSendNotice.sbUrl.toString());
+        ddSendNotice.setToken("b4538d0fe797dc828727eb896d96cd6744c31622a110118ae00c8a883d69bbf8");
+       ddSendNotice.send("","任务组【s_group】已全部成功完成!");
     }
 }

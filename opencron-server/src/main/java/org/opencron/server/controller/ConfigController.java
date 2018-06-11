@@ -22,6 +22,8 @@
 package org.opencron.server.controller;
 
 import org.opencron.common.utils.DigestUtils;
+import org.opencron.common.utils.StringUtils;
+import org.opencron.server.alarm.DDSendNotice;
 import org.opencron.server.domain.Config;
 import org.opencron.server.job.OpencronTools;
 import org.opencron.server.service.ConfigService;
@@ -50,6 +52,9 @@ public class ConfigController extends BaseController {
     @Autowired
     private RecordService recordService;
 
+    @Autowired
+    private DDSendNotice ddSendNotice;
+
     @RequestMapping("view.htm")
     public String settings(Model model) {
         model.addAttribute("config", configService.getSysConfig());
@@ -73,10 +78,16 @@ public class ConfigController extends BaseController {
         cfg.setSmtpHost(config.getSmtpHost());
         cfg.setSpaceTime(config.getSpaceTime());
         cfg.setSmtpPort(config.getSmtpPort());
+        if(StringUtils.isNotNullString(config.getDdToken())){
+            cfg.setDdToken(config.getDdToken());
+            ddSendNotice.changeToken(config.getDdToken());
+        }
+
         if(config.getMaxRunning()>=1){
             cfg.setMaxRunning(config.getMaxRunning());
         }
         configService.update(cfg);
+
         return "redirect:/config/view.htm?csrf=" + OpencronTools.getCSRF(session);
     }
 
