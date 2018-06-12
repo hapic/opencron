@@ -377,7 +377,7 @@ public class JobController extends BaseController {
             return "redirect:/job/view.htm?csrf=" + OpencronTools.getCSRF(session)+groupParam;
 
         dbJob.setExecType(job.getExecType());
-        dbJob.setCronType(job.getCronType());
+        dbJob.setCronType(Opencron.CronType.QUARTZ.getType());
         dbJob.setCronExp(job.getCronExp());
         dbJob.setCommand(DigestUtils.passBase64(job.getCommand()));
         dbJob.setJobName(job.getJobName());

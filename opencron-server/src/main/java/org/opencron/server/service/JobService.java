@@ -579,9 +579,12 @@ public class JobService {
 
             if(job.getGroupId()!=null){
                 List<JobVo> rootJobList=this.loadRootJobByGroupId(job.getGroupId());
+                JobActionGroup jobActionGroup = this.jobActionGroupService.loadActionGroupByActionId(actionId);
+
                 for(JobVo rootJob:rootJobList){
                     if(job.getJobId().equals(rootJob.getJobId())){
                         logger.info("insert job:{},actionId:{} status:pending ",rootJob.getJobName(),actionId);
+                        rootJob.setActionGroup(jobActionGroup);
                         this.recordService.insertPendingReocrd(actionId,rootJob, RunStatus.PENDING);
                     }else {
                         this.recordService.insertPendingReocrd(actionId,rootJob, RunStatus.QUARTATRI);

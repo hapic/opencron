@@ -444,7 +444,7 @@ public class RecordService {
             JobActionGroup actionGroup = childJob.getActionGroup();
 
             String parse=record.getCommand();
-            if(StringUtils.isNotNullString(actionGroup.getParam())){
+            if(actionGroup!=null && StringUtils.isNotNullString(actionGroup.getParam())){
                 childJob.setParam(actionGroup.getParam());
             }
              parse = Parser.parse(childJob);
@@ -456,6 +456,7 @@ public class RecordService {
             record = this.merge(record);
             log.info("by actionId:{} jobId:{} insert into new reocrd:{},cmd:{}",actionId, childJob.getJobId(),record.getRecordId(),record.getCommand());
         } catch (Exception e) {
+            e.printStackTrace();
             DBException.business(e,"UK_UNIQUECODE");
             return this.getRecord(actionId, childJob.getJobId());
         }
