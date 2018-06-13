@@ -27,6 +27,7 @@ public class SendMessageRunnable implements Runnable {
             try {
                 AlertMessage peek = AlertMessageQueue.take();//如若为空则一直处于堵塞状态
                 if(peek!=null){
+                    log.info("take message:"+peek);
                     AlarmNoticeFacory.sendMsg(null,peek.getMessage(), AlarmTypes.DINGDING);
                 }
             } catch (Exception e) {

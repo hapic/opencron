@@ -37,7 +37,6 @@ public class DDSendNotice implements SendNotice {
         JSONObject jsonObject= new JSONObject();
 
         jsonObject.put("content",msg);
-        jsonObject.put("sendWay","0");
         jsonObject.put("source","WARNING_FIXME");
         try {
             sendPost(sbUrl.toString(),jsonObject.toJSONString());

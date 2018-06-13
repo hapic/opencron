@@ -262,17 +262,17 @@
                 <div class="form-group">
                     <label class="col-lab control-label wid150"><i class="glyphicon  glyphicon glyphicon-forward"></i>&nbsp;&nbsp;失败重跑&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
-                        <label for="redo01" class="radio-label"><input type="radio" name="redo" value="1" id="redo01">是&nbsp;&nbsp;&nbsp;</label>
-                        <label for="redo00" class="radio-label"><input type="radio" name="redo" value="0" id="redo00" checked>否</label>&nbsp;&nbsp;&nbsp;
+                        <label for="redo01" class="radio-label"><input type="radio" name="redo" checked value="1" id="redo01">是&nbsp;&nbsp;&nbsp;</label>
+                        <label for="redo00" class="radio-label"><input type="radio" name="redo" value="0" id="redo00">否</label>&nbsp;&nbsp;&nbsp;
                         <br><span class="tips">执行失败时是否自动重新执行</span>
                     </div>
                 </div>
                 <br>
 
-                <div class="form-group countDiv">
+                <div class="form-group countDiv" >
                     <label for="runCount" class="col-lab control-label wid150"><i class="glyphicon glyphicon-repeat"></i>&nbsp;&nbsp;重跑次数&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control input-sm" id="runCount" name="runCount">
+                        <input type="text" class="form-control input-sm" id="runCount" name="runCount" value="1">
                         <span class="tips" tip="执行失败时自动重新执行的截止次数">执行失败时自动重新执行的截止次数</span>
                     </div>
                 </div>
@@ -283,7 +283,7 @@
                 <div class="form-group">
                     <label for="alarm" class="col-lab control-label wid150"><i class="glyphicon glyphicon-volume-up"></i>&nbsp;&nbsp;通知功能&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
                     <div class="col-md-10" id="alarm">
-                        <label for="failAlarm" ><input type="checkbox" name="alarmCodes" id="failAlarm" value="1"/>失败通知</label>
+                        <label for="failAlarm" ><input type="checkbox" checked name="alarmCodes" id="failAlarm" value="1"/>失败通知</label>
 
                         <label for="successAlarm" ><input type="checkbox" name="alarmCodes" id="successAlarm" value="4"/>成功通知</label>
 

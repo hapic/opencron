@@ -7,6 +7,7 @@ package org.opencron.server.alarm;
  * @version V1.0
  */
 
+import lombok.extern.slf4j.Slf4j;
 import org.opencron.common.utils.RightCode;
 
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Map;
 /**
  * @Descriptions:
  */
+@Slf4j
 public class AlarmNoticeFacory {
 
 
@@ -34,7 +36,10 @@ public class AlarmNoticeFacory {
         }
         for(AlarmTypes at:alarmTypes){
             SendNotice instantce = AlarmNoticeFacory.getInstantce(at);
-            instantce.send(accept,msg);
+            if(instantce!=null){
+                log.info("send message:"+msg);
+                instantce.send(accept,msg);
+            }
         }
     }
 
@@ -62,6 +67,7 @@ public class AlarmNoticeFacory {
                 String jobErrorAlarm = MsgTemplet.getJobErrorAlarm(info);
                 alertMessage= new AlertMessage(jobErrorAlarm);
         }
+        log.info("put message:"+alertMessage);
         AlertMessageQueue.put(alertMessage);
 
     }

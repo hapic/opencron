@@ -9,12 +9,14 @@ package org.opencron.server.alarm;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * @Descriptions:
  */
 @Setter
 @Getter
+@ToString
 public class AlertMessage {
 
     private String uuid;
